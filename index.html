@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lamp Shade Studio</title>
+<style>
+  :root {
+    --bg: #29242a;
+    --glass: rgba(239, 239, 239, 0.05);
+    --glass-border: rgba(255, 255, 255, 0.3);
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    background: var(--bg);
+    color: #fff;
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    overflow: hidden;
+  }
+
+  .stage {
+    position: relative;
+    width: 100%;
+    height: 100vh;
+    min-height: 600px;
+  }
+
+  /* ---------- Top-right toggle ---------- */
+  .toggle-row {
+    position: absolute;
+    top: 5%;
+    right: 4%;
+    display: flex;
+    align-items: center;
+    gap: 30px;
+  }
+
+  .toggle-label {
+    font-size: 16px;
+    line-height: 1.35;
+    white-space: nowrap;
+  }
+
+  .light-toggle {
+    appearance: none;
+    -webkit-appearance: none;
+    background: var(--glass);
+    border: 0.3px solid var(--glass-border);
+    border-radius: 77px;
+    width: 99px;
+    height: 50px;
+    padding: 8px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 10px;
+    cursor: pointer;
+    color: #fff;
+    font-family: inherit;
+    font-size: 16px;
+    transition: justify-content 0.2s ease;
+  }
+
+  .light-toggle.is-on {
+    justify-content: flex-end;
+  }
+
+  .light-toggle .knob {
+    width: 29px;
+    height: 29px;
+    flex-shrink: 0;
+    order: -1;
+  }
+
+  .light-toggle.is-on .knob {
+    order: 1;
+  }
+
+  .light-toggle .knob img {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  /* ---------- Lamp (right panel) ---------- */
+  .lamp {
+    position: absolute;
+    left: 62%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 720px;
+    height: 745px;
+    max-width: 42vw;
+    aspect-ratio: 718.44 / 744.424;
+  }
+
+  .lamp img {
+    position: absolute;
+    display: block;
+    pointer-events: none;
+    user-select: none;
+  }
+
+  /* Ambient warm bloom behind the whole lamp — off by default */
+  .lamp .glow-ambient {
+    left: calc(50% + 15.49%);
+    top: calc(50% - 19.28%);
+    width: 337.6%;
+    height: 178.5%;
+    transform: translate(-50%, -50%);
+    opacity: 0;
+    transition: opacity 0.8s ease;
+    z-index: 0;
+  }
+
+  /* Wooden frame — full structure */
+  .lamp .frame {
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+  }
+
+  /* Top diamond cap */
+  .lamp .top {
+    left: 11.83%;
+    top: 10.67%;
+    width: 76.60%;
+    height: 34.35%;
+    z-index: 2;
+  }
+
+  /* Left translucent panel */
+  .lamp .panel-left {
+    left: 10.00%;
+    top: 29.66%;
+    width: 39.36%;
+    height: 65.52%;
+    opacity: 0.9;
+    z-index: 2;
+  }
+
+  /* Right translucent panel (holds the flower) */
+  .lamp .panel-right {
+    position: absolute;
+    left: 51.17%;
+    top: 29.27%;
+    width: 39.53%;
+    height: 65.52%;
+    z-index: 2;
+  }
+
+  .lamp .panel-right img.panel-right-fill {
+    position: static;
+    width: 100%;
+    height: 100%;
+    display: block;
+    opacity: 0.9;
+  }
+
+  /* Flower artwork, nested relative to the right panel */
+  .lamp .panel-right .flower {
+    position: absolute;
+    left: 23.35%;
+    top: 20.82%;
+    width: 55.47%;
+    height: 58.51%;
+  }
+
+  /* Warm tint that washes over the top + both panels when lit */
+  .lamp .warm-lighting {
+    left: 2.42%;
+    top: 10.67%;
+    width: 95.15%;
+    height: 84.54%;
+    opacity: 0;
+    transition: opacity 0.8s ease;
+    z-index: 3;
+  }
+
+  /* Front corner posts — rendered above the glowing panels */
+  .lamp .post-a {
+    left: 46.41%;
+    top: 37.71%;
+    width: 4.24%;
+    height: 69.12%;
+    z-index: 4;
+  }
+
+  .lamp .post-b {
+    left: 54.00%;
+    top: 37.61%;
+    width: 4.24%;
+    height: 69.12%;
+    transform: scaleX(-1);
+    z-index: 4;
+  }
+
+  .stage.is-lit .lamp .glow-ambient,
+  .stage.is-lit .lamp .warm-lighting {
+    opacity: 1;
+  }
+
+  /* ---------- Bottom-right CTA ---------- */
+  .cta {
+    position: absolute;
+    bottom: 6%;
+    right: 4%;
+    background: var(--glass);
+    border: 0.3px solid var(--glass-border);
+    border-radius: 77px;
+    padding: 10px 40px;
+    color: #fff;
+    font-family: inherit;
+    font-size: 20px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.2s ease;
+  }
+
+  .cta:hover {
+    background: rgba(239, 239, 239, 0.12);
+  }
+
+  @media (max-width: 900px) {
+    html, body { overflow: auto; }
+    .stage { height: auto; min-height: 100vh; padding: 24px 0 100px; }
+    .toggle-row { position: static; justify-content: flex-end; margin: 0 24px 40px; }
+    .lamp { position: static; transform: none; width: 90%; max-width: 420px; margin: 0 auto; }
+    .cta { position: static; display: block; width: fit-content; margin: 40px auto 0; }
+  }
+</style>
+</head>
+<body>
+  <div class="stage">
+    <div class="toggle-row">
+      <span class="toggle-label">Turn the lights on</span>
+      <button class="light-toggle" id="lightToggle" type="button" aria-pressed="false">
+        <span class="knob"><img src="assets/toggle-knob.svg" alt=""></span>
+        <span class="toggle-text">Off</span>
+      </button>
+    </div>
+
+    <div class="lamp" aria-label="Lamp shade preview">
+      <img class="glow-ambient" src="assets/ambient-glow.svg" alt="">
+      <img class="frame" src="assets/lamp-frame.svg" alt="">
+      <img class="top" src="assets/lamp-top.svg" alt="">
+      <img class="panel-left" src="assets/lamp-panel-left.svg" alt="">
+      <div class="panel-right">
+        <img class="panel-right-fill" src="assets/lamp-panel-right.svg" alt="">
+        <img class="flower" src="assets/flower.svg" alt="Flower design on lamp shade">
+      </div>
+      <img class="warm-lighting" src="assets/warm-lighting.svg" alt="">
+      <img class="post-a" src="assets/lamp-post-a.svg" alt="">
+      <img class="post-b" src="assets/lamp-post-b.svg" alt="">
+    </div>
+
+    <button class="cta" id="designCta" type="button">Design your own lamp shade</button>
+  </div>
+
+<script>
+  const toggle = document.getElementById('lightToggle');
+  const toggleText = toggle.querySelector('.toggle-text');
+  const stage = document.querySelector('.stage');
+
+  toggle.addEventListener('click', () => {
+    const isOn = toggle.classList.toggle('is-on');
+    toggle.setAttribute('aria-pressed', String(isOn));
+    toggleText.textContent = isOn ? 'On' : 'Off';
+    stage.classList.toggle('is-lit', isOn);
+  });
+
+  document.getElementById('designCta').addEventListener('click', () => {
+    // Placeholder — wire up to the lamp shade designer flow.
+    console.log('Design your own lamp shade clicked');
+  });
+</script>
+</body>
+</html>
