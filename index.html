@@ -207,11 +207,15 @@
     opacity: 1;
   }
 
-  /* ---------- Bottom-right CTA ---------- */
-  .cta {
+  /* ---------- Bottom-right "Design your own lamp shade" ---------- */
+  .designer {
     position: absolute;
     bottom: 6%;
     right: 4%;
+    max-width: 90vw;
+  }
+
+  .cta {
     background: var(--glass);
     border: 0.3px solid var(--glass-border);
     border-radius: 77px;
@@ -225,7 +229,132 @@
   }
 
   .cta:hover {
-    background: rgba(239, 239, 239, 0.12);
+    background: rgba(239, 239, 239, 0.1);
+  }
+
+  .designer.is-open .cta {
+    display: none;
+  }
+
+  /* ---------- Open designer panel ---------- */
+  .designer-panel {
+    display: none;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 24px;
+    width: 656px;
+    max-width: 90vw;
+    padding: 40px 32px;
+    background: rgba(239, 239, 239, 0.03);
+    border-radius: 24px;
+    color: #fff;
+  }
+
+  .designer.is-open .designer-panel {
+    display: flex;
+  }
+
+  .designer-panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+  }
+
+  .designer-panel-header p {
+    margin: 0;
+    font-family: inherit;
+    font-weight: 500;
+    font-size: 20px;
+  }
+
+  .designer-close {
+    background: none;
+    border: none;
+    padding: 0;
+    width: 12px;
+    height: 12px;
+    cursor: pointer;
+  }
+
+  .designer-close img {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  .designer-card {
+    width: 100%;
+    border-radius: 12px;
+    box-sizing: border-box;
+  }
+
+  .designer-card-title {
+    margin: 0;
+    font-style: italic;
+    font-size: 20px;
+  }
+
+  .designer-card-body {
+    margin: 0;
+    font-size: 18px;
+    white-space: pre-wrap;
+  }
+
+  .designer-story {
+    background: rgba(255, 255, 255, 0.04);
+    padding: 28px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .designer-story .designer-card-body {
+    font-weight: 300;
+  }
+
+  .designer-action {
+    background: rgba(255, 255, 255, 0.08);
+    box-shadow: 8px 12px 17.8px 0px rgba(0, 0, 0, 0.1);
+    padding: 28px 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 40px;
+  }
+
+  .designer-card-text {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .lets-create {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 10px 40px;
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 77px;
+    color: #fff;
+    font-family: inherit;
+    font-size: 18px;
+    text-decoration: none;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background 0.2s ease;
+  }
+
+  .lets-create:hover {
+    background: rgba(255, 255, 255, 0.22);
+  }
+
+  .lets-create img {
+    display: block;
+    width: 13px;
+    height: 13px;
   }
 
   @media (max-width: 900px) {
@@ -233,7 +362,7 @@
     .stage { height: auto; min-height: 100vh; padding: 24px 0 100px; }
     .toggle-row { position: static; justify-content: flex-end; margin: 0 24px 40px; }
     .lamp { position: static; transform: none; width: 90%; max-width: 420px; margin: 0 auto; }
-    .cta { position: static; display: block; width: fit-content; margin: 40px auto 0; }
+    .designer { position: static; display: block; width: fit-content; max-width: 100%; margin: 40px auto 0; }
   }
 </style>
 </head>
@@ -261,7 +390,36 @@
       <img class="post-b" src="assets/lamp-post-b.svg" alt="">
     </div>
 
-    <button class="cta" id="designCta" type="button">Design your own lamp shade</button>
+    <div class="designer" id="designer">
+      <button class="cta" id="designerOpen" type="button">Design your own lamp shade</button>
+
+      <div class="designer-panel">
+        <div class="designer-panel-header">
+          <p>Design your own lamp shade</p>
+          <button class="designer-close" id="designerClose" type="button" aria-label="Close">
+            <img src="assets/close-icon.svg" alt="">
+          </button>
+        </div>
+
+        <div class="designer-card designer-story">
+          <p class="designer-card-title">Antidote</p>
+          <p class="designer-card-body">I recently graduated and got my first big girl apartment! And like every new apartment owner, immediately became obsessed with furniture shopping. Lamps especially, since my place has zero overhead lighting. That obsession sent me down the rabbit hole that is paper lamps, and I landed on the side of the internet where people make their own and collage them by hand. Now, I don't have the skills to make a lamp from scratch but I do have the skills to bring it online.
+
+So this project is inspired by that.</p>
+        </div>
+
+        <div class="designer-card designer-action">
+          <div class="designer-card-text">
+            <p class="designer-card-title">Make it yours</p>
+            <p class="designer-card-body">Draw on the left or right panel (it'll replace the flower). Leave it blank and it stays plain and lit.</p>
+          </div>
+          <a class="lets-create" href="drawing.html">
+            Let’s Create
+            <img src="assets/create-arrow.svg" alt="">
+          </a>
+        </div>
+      </div>
+    </div>
   </div>
 
 <script>
@@ -276,9 +434,12 @@
     stage.classList.toggle('is-lit', isOn);
   });
 
-  document.getElementById('designCta').addEventListener('click', () => {
-    // Placeholder — wire up to the lamp shade designer flow.
-    console.log('Design your own lamp shade clicked');
+  const designer = document.getElementById('designer');
+  document.getElementById('designerOpen').addEventListener('click', () => {
+    designer.classList.add('is-open');
+  });
+  document.getElementById('designerClose').addEventListener('click', () => {
+    designer.classList.remove('is-open');
   });
 </script>
 </body>
