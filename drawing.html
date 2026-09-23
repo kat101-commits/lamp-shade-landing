@@ -21,54 +21,354 @@
     font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
   }
 
-  .wrap {
+  .page {
+    position: relative;
     min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 24px;
-    padding: 40px 24px;
-    text-align: center;
+    padding: 24px 24px 220px;
   }
 
-  h1 {
-    font-weight: 500;
-    font-size: 28px;
-    margin: 0;
-  }
-
-  p {
-    max-width: 420px;
-    font-size: 16px;
-    color: rgba(255, 255, 255, 0.7);
-    margin: 0;
-  }
-
-  .back {
+  .done-btn {
+    position: absolute;
+    top: 5%;
+    right: 4%;
     display: inline-flex;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
     padding: 10px 40px;
-    background: var(--glass);
-    border: 0.3px solid var(--glass-border);
+    background: rgba(255, 255, 255, 0.15);
+    border: none;
     border-radius: 77px;
     color: #fff;
-    font-size: 16px;
-    text-decoration: none;
+    font-family: inherit;
+    font-size: 18px;
+    cursor: pointer;
+    white-space: nowrap;
     transition: background 0.2s ease;
   }
 
-  .back:hover {
-    background: rgba(239, 239, 239, 0.1);
+  .done-btn:hover {
+    background: rgba(255, 255, 255, 0.22);
+  }
+
+  .done-btn img {
+    display: block;
+    width: 13px;
+    height: 13px;
+  }
+
+  .panels-row {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 80px;
+    padding-top: 12%;
+  }
+
+  .panel-block {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .panel-label {
+    font-size: 20px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #fff;
+  }
+
+  .canvas-frame {
+    background: rgba(255, 255, 255, 0.2);
+    padding: 32px;
+    border-radius: 8px;
+  }
+
+  .draw-canvas {
+    display: block;
+    width: min(340px, 40vw);
+    height: calc(min(340px, 40vw) * 635 / 605);
+    background: #fff6e8;
+    border-radius: 4.38px;
+    cursor: crosshair;
+    touch-action: none;
+  }
+
+  /* ---------- Bottom toolbar ---------- */
+  .toolbar {
+    position: fixed;
+    bottom: 5%;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 28px;
+    padding: 18px 32px;
+    background: rgba(239, 239, 239, 0.3);
+    border: 1px solid #fff;
+    border-radius: 1000px;
+    max-width: 94vw;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .tool-btn {
+    height: 100px;
+    width: auto;
+    padding: 0;
+    background: none;
+    border: none;
+    cursor: pointer;
+    opacity: 0.65;
+    display: flex;
+    align-items: flex-end;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+  }
+
+  .tool-btn img {
+    display: block;
+    height: 100%;
+    width: auto;
+  }
+
+  .tool-btn.active {
+    opacity: 1;
+    transform: scale(1.08);
+  }
+
+  .brush-group {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    border: 0.8px solid #e8e8e8;
+    border-radius: 6.4px;
+    padding: 8px 20px;
+  }
+
+  .brush-btn {
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    background: none;
+    border: none;
+    cursor: pointer;
+    opacity: 0.55;
+    transition: opacity 0.2s ease;
+  }
+
+  .brush-btn img {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  .brush-btn.active {
+    opacity: 1;
+  }
+
+  .color-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .color-swatch {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    padding: 0;
+    cursor: pointer;
+    border: 2px solid transparent;
+    box-shadow: 0 0 0 0 rgba(255, 255, 255, 0);
+    transition: box-shadow 0.2s ease, transform 0.2s ease;
+  }
+
+  .color-swatch.active {
+    box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px #fff;
+    transform: scale(1.05);
+  }
+
+  @media (max-width: 720px) {
+    .panels-row { gap: 32px; padding-top: 24px; }
+    .toolbar { gap: 16px; padding: 14px 20px; }
+    .brush-group { gap: 12px; padding: 6px 12px; }
+    .color-row { gap: 10px; }
   }
 </style>
 </head>
 <body>
-  <div class="wrap">
-    <h1>Drawing screen — coming soon</h1>
-    <p>This is where you'll sketch directly on the lamp shade's left or right panel. Leave it blank and it stays plain and lit.</p>
-    <a class="back" href="index.html">&larr; Back to lamp</a>
+  <div class="page">
+    <button class="done-btn" id="doneBtn" type="button">
+      Done - Let’s Turn on the lights
+      <img src="assets/create-arrow.svg" alt="">
+    </button>
+
+    <div class="panels-row">
+      <div class="panel-block">
+        <p class="panel-label">Left Panel</p>
+        <div class="canvas-frame">
+          <canvas class="draw-canvas" id="leftCanvas" width="524" height="550"></canvas>
+        </div>
+      </div>
+      <div class="panel-block">
+        <p class="panel-label">Right Panel</p>
+        <div class="canvas-frame">
+          <canvas class="draw-canvas" id="rightCanvas" width="524" height="550"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="toolbar">
+      <button class="tool-btn" id="toolPencil" type="button" aria-label="Pencil">
+        <img src="assets/tool-pencil.svg" alt="">
+      </button>
+      <button class="tool-btn" id="toolEraser" type="button" aria-label="Eraser">
+        <img src="assets/tool-eraser.svg" alt="">
+      </button>
+
+      <div class="brush-group">
+        <button class="brush-btn" id="brushSmall" type="button" aria-label="Small brush">
+          <img src="assets/brush-small.svg" alt="">
+        </button>
+        <button class="brush-btn" id="brushMedium" type="button" aria-label="Medium brush">
+          <img src="assets/brush-medium.svg" alt="">
+        </button>
+        <button class="brush-btn" id="brushLarge" type="button" aria-label="Large brush">
+          <img src="assets/brush-large.svg" alt="">
+        </button>
+      </div>
+
+      <div class="color-row">
+        <button class="color-swatch" style="background:#f30000" data-color="#f30000" aria-label="Red"></button>
+        <button class="color-swatch" style="background:#ff8a00" data-color="#ff8a00" aria-label="Orange"></button>
+        <button class="color-swatch" style="background:#ffe600" data-color="#ffe600" aria-label="Yellow"></button>
+        <button class="color-swatch" style="background:#128a0d" data-color="#128a0d" aria-label="Green"></button>
+        <button class="color-swatch" style="background:#0066ff" data-color="#0066ff" aria-label="Blue"></button>
+        <button class="color-swatch" style="background:#9c1cb0" data-color="#9c1cb0" aria-label="Purple"></button>
+      </div>
+    </div>
   </div>
+
+<script>
+  const canvases = {
+    left: document.getElementById('leftCanvas'),
+    right: document.getElementById('rightCanvas'),
+  };
+  const ctxs = {
+    left: canvases.left.getContext('2d'),
+    right: canvases.right.getContext('2d'),
+  };
+  const drawnFlags = { left: false, right: false };
+
+  const brushSizes = { small: 4, medium: 9, large: 16 };
+  let tool = 'pencil';
+  let color = '#f30000';
+  let brushSize = brushSizes.medium;
+
+  function getPos(canvas, evt) {
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    const point = evt.touches ? evt.touches[0] : evt;
+    return {
+      x: (point.clientX - rect.left) * scaleX,
+      y: (point.clientY - rect.top) * scaleY,
+    };
+  }
+
+  function setupCanvas(key) {
+    const canvas = canvases[key];
+    const ctx = ctxs[key];
+    let drawing = false;
+    let last = null;
+
+    function start(e) {
+      e.preventDefault();
+      drawing = true;
+      last = getPos(canvas, e);
+    }
+    function move(e) {
+      if (!drawing) return;
+      e.preventDefault();
+      const pos = getPos(canvas, e);
+      ctx.lineJoin = 'round';
+      ctx.lineCap = 'round';
+      ctx.lineWidth = brushSize;
+      if (tool === 'eraser') {
+        ctx.globalCompositeOperation = 'destination-out';
+        ctx.strokeStyle = 'rgba(0,0,0,1)';
+      } else {
+        ctx.globalCompositeOperation = 'source-over';
+        ctx.strokeStyle = color;
+      }
+      ctx.beginPath();
+      ctx.moveTo(last.x, last.y);
+      ctx.lineTo(pos.x, pos.y);
+      ctx.stroke();
+      last = pos;
+      drawnFlags[key] = true;
+    }
+    function end() { drawing = false; last = null; }
+
+    canvas.addEventListener('mousedown', start);
+    canvas.addEventListener('mousemove', move);
+    window.addEventListener('mouseup', end);
+    canvas.addEventListener('touchstart', start, { passive: false });
+    canvas.addEventListener('touchmove', move, { passive: false });
+    canvas.addEventListener('touchend', end);
+  }
+
+  setupCanvas('left');
+  setupCanvas('right');
+
+  const toolPencil = document.getElementById('toolPencil');
+  const toolEraser = document.getElementById('toolEraser');
+  function setTool(t) {
+    tool = t;
+    toolPencil.classList.toggle('active', t === 'pencil');
+    toolEraser.classList.toggle('active', t === 'eraser');
+  }
+  toolPencil.addEventListener('click', () => setTool('pencil'));
+  toolEraser.addEventListener('click', () => setTool('eraser'));
+  setTool('pencil');
+
+  const brushButtons = {
+    small: document.getElementById('brushSmall'),
+    medium: document.getElementById('brushMedium'),
+    large: document.getElementById('brushLarge'),
+  };
+  function setBrush(size) {
+    brushSize = brushSizes[size];
+    Object.entries(brushButtons).forEach(([key, btn]) => btn.classList.toggle('active', key === size));
+  }
+  brushButtons.small.addEventListener('click', () => setBrush('small'));
+  brushButtons.medium.addEventListener('click', () => setBrush('medium'));
+  brushButtons.large.addEventListener('click', () => setBrush('large'));
+  setBrush('medium');
+
+  const swatches = document.querySelectorAll('.color-swatch');
+  swatches.forEach((sw) => {
+    sw.addEventListener('click', () => {
+      color = sw.dataset.color;
+      swatches.forEach((s) => s.classList.remove('active'));
+      sw.classList.add('active');
+      setTool('pencil');
+    });
+  });
+  swatches[0].classList.add('active');
+
+  document.getElementById('doneBtn').addEventListener('click', () => {
+    ['left', 'right'].forEach((key) => {
+      const storageKey = 'lamp' + key.charAt(0).toUpperCase() + key.slice(1) + 'Art';
+      if (drawnFlags[key]) {
+        localStorage.setItem(storageKey, canvases[key].toDataURL('image/png'));
+      } else {
+        localStorage.removeItem(storageKey);
+      }
+    });
+    localStorage.setItem('lampCustomized', '1');
+    window.location.href = 'index.html?lit=1';
+  });
+</script>
 </body>
 </html>

@@ -136,17 +136,17 @@
     z-index: 2;
   }
 
-  /* Left translucent panel */
+  /* Left translucent panel (holds custom art, if drawn) */
   .lamp .panel-left {
+    position: absolute;
     left: 10.00%;
     top: 29.66%;
     width: 39.36%;
     height: 65.52%;
-    opacity: 0.9;
     z-index: 2;
   }
 
-  /* Right translucent panel (holds the flower) */
+  /* Right translucent panel (holds the flower, or custom art) */
   .lamp .panel-right {
     position: absolute;
     left: 51.17%;
@@ -156,6 +156,7 @@
     z-index: 2;
   }
 
+  .lamp .panel-left img.panel-left-fill,
   .lamp .panel-right img.panel-right-fill {
     position: static;
     width: 100%;
@@ -164,13 +165,15 @@
     opacity: 0.9;
   }
 
-  /* Flower artwork, nested relative to the right panel */
+  /* Flower / custom artwork, nested relative to its panel */
+  .lamp .panel-left .flower,
   .lamp .panel-right .flower {
     position: absolute;
     left: 23.35%;
     top: 20.82%;
     width: 55.47%;
     height: 58.51%;
+    object-fit: cover;
   }
 
   /* Warm tint that washes over the top + both panels when lit */
@@ -380,7 +383,10 @@
       <img class="glow-ambient" src="assets/ambient-glow.svg" alt="">
       <img class="frame" src="assets/lamp-frame.svg" alt="">
       <img class="top" src="assets/lamp-top.svg" alt="">
-      <img class="panel-left" src="assets/lamp-panel-left.svg" alt="">
+      <div class="panel-left">
+        <img class="panel-left-fill" src="assets/lamp-panel-left.svg" alt="">
+        <img class="flower" src="" alt="Custom drawing on left panel" style="display:none;">
+      </div>
       <div class="panel-right">
         <img class="panel-right-fill" src="assets/lamp-panel-right.svg" alt="">
         <img class="flower" src="assets/flower.svg" alt="Flower design on lamp shade">
@@ -441,6 +447,29 @@ So this project is inspired by that.</p>
   document.getElementById('designerClose').addEventListener('click', () => {
     designer.classList.remove('is-open');
   });
+
+  // Apply artwork drawn on the "Design your own lamp shade" screen, if any.
+  if (localStorage.getItem('lampCustomized') === '1') {
+    const leftArt = localStorage.getItem('lampLeftArt');
+    const rightArt = localStorage.getItem('lampRightArt');
+    const leftFlower = document.querySelector('.panel-left .flower');
+    const rightFlower = document.querySelector('.panel-right .flower');
+
+    if (leftArt) {
+      leftFlower.src = leftArt;
+      leftFlower.style.display = 'block';
+    }
+    if (rightArt) {
+      rightFlower.src = rightArt;
+      rightFlower.style.display = 'block';
+    } else {
+      rightFlower.style.display = 'none';
+    }
+  }
+
+  if (new URLSearchParams(location.search).get('lit') === '1' && !toggle.classList.contains('is-on')) {
+    toggle.click();
+  }
 </script>
 </body>
 </html>
