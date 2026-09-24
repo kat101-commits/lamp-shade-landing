@@ -47,6 +47,7 @@
   }
 
   .light-toggle {
+    position: relative;
     appearance: none;
     -webkit-appearance: none;
     background: var(--glass);
@@ -57,37 +58,49 @@
     border-radius: 77px;
     width: 99px;
     height: 50px;
-    padding: 8px 12px;
-    display: flex;
-    align-items: center;
-    justify-content: flex-start;
-    gap: 10px;
+    padding: 4px;
     cursor: pointer;
     color: #fff;
     font-family: inherit;
     font-size: 14px;
-    transition: justify-content 0.2s ease;
-  }
-
-  .light-toggle.is-on {
-    justify-content: flex-end;
+    overflow: hidden;
   }
 
   .light-toggle .knob {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    margin: auto 0;
     width: 29px;
     height: 29px;
-    flex-shrink: 0;
-    order: -1;
+    transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   .light-toggle.is-on .knob {
-    order: 1;
+    left: calc(100% - 29px);
   }
 
   .light-toggle .knob img {
     display: block;
     width: 100%;
     height: 100%;
+  }
+
+  .light-toggle .toggle-text {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 39px;
+    right: auto;
+    display: flex;
+    align-items: center;
+    white-space: nowrap;
+  }
+
+  .light-toggle.is-on .toggle-text {
+    left: auto;
+    right: 39px;
   }
 
   /* ---------- Lamp (left-quarter panel) ---------- */
@@ -144,8 +157,8 @@
     position: absolute;
     left: 10.00%;
     top: 29.66%;
-    width: 43.30%;
-    height: 72.07%;
+    width: 39.36%;
+    height: 65.52%;
     z-index: 2;
   }
 
@@ -154,8 +167,8 @@
     position: absolute;
     left: 51.17%;
     top: 29.27%;
-    width: 43.48%;
-    height: 72.07%;
+    width: 39.53%;
+    height: 65.52%;
     z-index: 2;
   }
 
@@ -251,9 +264,9 @@
     flex-direction: column;
     align-items: flex-end;
     gap: 24px;
-    width: 656px;
+    width: 616px;
     max-width: 90vw;
-    padding: 40px 32px;
+    padding: 32px 24px;
     background: rgba(239, 239, 239, 0.03);
     backdrop-filter: blur(28px) saturate(160%);
     -webkit-backdrop-filter: blur(28px) saturate(160%);
