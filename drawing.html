@@ -35,7 +35,7 @@
     align-items: center;
     gap: 12px;
     padding: 10px 40px;
-    background: rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.1);
     backdrop-filter: blur(8px) saturate(160%);
     -webkit-backdrop-filter: blur(8px) saturate(160%);
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3), inset 0 0 0 0.3px rgba(255, 255, 255, 0.2);
@@ -153,24 +153,18 @@
   }
 
   .brush-btn {
-    width: 36px;
-    height: 36px;
+    width: 50px;
+    height: 50px;
     padding: 0;
     background: none;
     border: none;
     cursor: pointer;
-    opacity: 0.55;
-    transition: opacity 0.2s ease;
   }
 
   .brush-btn img {
     display: block;
     width: 100%;
     height: 100%;
-  }
-
-  .brush-btn.active {
-    opacity: 1;
   }
 
   .color-row {
@@ -344,9 +338,18 @@
     medium: document.getElementById('brushMedium'),
     large: document.getElementById('brushLarge'),
   };
+  const brushArt = {
+    small: { default: 'assets/brush-small.svg', selected: 'assets/brush-small-selected.svg' },
+    medium: { default: 'assets/brush-medium.svg', selected: 'assets/brush-medium-selected.svg' },
+    large: { default: 'assets/brush-large.svg', selected: 'assets/brush-large-selected.svg' },
+  };
   function setBrush(size) {
     brushSize = brushSizes[size];
-    Object.entries(brushButtons).forEach(([key, btn]) => btn.classList.toggle('active', key === size));
+    Object.entries(brushButtons).forEach(([key, btn]) => {
+      const isSelected = key === size;
+      btn.classList.toggle('active', isSelected);
+      btn.querySelector('img').src = isSelected ? brushArt[key].selected : brushArt[key].default;
+    });
   }
   brushButtons.small.addEventListener('click', () => setBrush('small'));
   brushButtons.medium.addEventListener('click', () => setBrush('medium'));

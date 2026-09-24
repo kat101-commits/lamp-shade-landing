@@ -1,7 +1,6 @@
-<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="44" height="44" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
-<g id="Component 18">
-<rect x="0.8" y="0.8" width="42.4" height="42.4" rx="21.2" stroke="white" stroke-width="1.6"/>
-<circle id="Ellipse 14" cx="21.6" cy="21.6" r="18" fill="white" fill-opacity="0.3"/>
-<circle id="Ellipse 13" cx="22" cy="21.6" r="8.4" fill="white"/>
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="50" height="50" viewBox="0 0 50 50" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Component 15">
+<rect x="1" y="1" width="48" height="48" rx="24" stroke="#979797" stroke-width="2"/>
+<circle id="Ellipse 13" cx="25" cy="25" r="10.5" fill="#979797"/>
 </g>
 </svg>
