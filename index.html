@@ -181,25 +181,14 @@
     opacity: 0.9;
   }
 
-  /* Decorative flower artwork, nested relative to its panel */
+  /* Flower / custom artwork, nested relative to its panel */
+  .lamp .panel-left .flower,
   .lamp .panel-right .flower {
     position: absolute;
     left: 23.35%;
     top: 20.82%;
     width: 55.47%;
     height: 58.51%;
-    object-fit: cover;
-  }
-
-  /* User-drawn artwork fills the full panel so crops read as the
-     panel's own edge, not an arbitrary inset. */
-  .lamp .panel-left .custom-art,
-  .lamp .panel-right .custom-art {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
     object-fit: cover;
   }
 
@@ -421,12 +410,11 @@
       <img class="top" src="assets/lamp-top.svg" alt="">
       <div class="panel-left">
         <img class="panel-left-fill" src="assets/lamp-panel-left.svg" alt="">
-        <img class="custom-art" src="" alt="Custom drawing on left panel" style="display:none;">
+        <img class="flower" src="" alt="Custom drawing on left panel" style="display:none;">
       </div>
       <div class="panel-right">
         <img class="panel-right-fill" src="assets/lamp-panel-right.svg" alt="">
         <img class="flower" src="assets/flower.svg" alt="Flower design on lamp shade">
-        <img class="custom-art" src="" alt="Custom drawing on right panel" style="display:none;">
       </div>
       <img class="warm-lighting" src="assets/warm-lighting.svg" alt="">
       <img class="post-a" src="assets/lamp-post-a.svg" alt="">
@@ -489,18 +477,16 @@ So this project is inspired by that.</p>
   if (localStorage.getItem('lampCustomized') === '1') {
     const leftArt = localStorage.getItem('lampLeftArt');
     const rightArt = localStorage.getItem('lampRightArt');
-    const leftCustomArt = document.querySelector('.panel-left .custom-art');
-    const rightCustomArt = document.querySelector('.panel-right .custom-art');
+    const leftFlower = document.querySelector('.panel-left .flower');
     const rightFlower = document.querySelector('.panel-right .flower');
 
     if (leftArt) {
-      leftCustomArt.src = leftArt;
-      leftCustomArt.style.display = 'block';
+      leftFlower.src = leftArt;
+      leftFlower.style.display = 'block';
     }
     if (rightArt) {
-      rightCustomArt.src = rightArt;
-      rightCustomArt.style.display = 'block';
-      rightFlower.style.display = 'none';
+      rightFlower.src = rightArt;
+      rightFlower.style.display = 'block';
     } else {
       rightFlower.style.display = 'none';
     }
