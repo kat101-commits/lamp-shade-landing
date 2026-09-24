@@ -81,10 +81,19 @@
     left: calc(100% - 24px);
   }
 
+  /* The knob artwork is a 32x32 asset (circle + drop-shadow bleed)
+     sitting inside a nominal 24x24 layout box -- per Figma's own
+     inset (0% top, 16.67% left/right, 33.33% bottom), the circle
+     itself is offset left/up within that asset. Position at its
+     native size so the visible circle -- not the shadow bleed --
+     centers in the 24x24 slot. */
   .light-toggle .knob img {
     display: block;
-    width: 100%;
-    height: 100%;
+    position: absolute;
+    left: -4px;
+    top: 0;
+    width: 32px;
+    height: 32px;
   }
 
   .light-toggle .toggle-text {
@@ -188,18 +197,15 @@
     position: absolute;
     left: 0;
     top: 0;
-    /* Unlit: muted, low-contrast ink with no glow */
-    filter: saturate(0.45) brightness(0.7) sepia(0.25);
-    opacity: 0.6;
+    /* Unlit: dimmer, slightly muted -- mostly an opacity drop */
+    filter: saturate(0.75);
+    opacity: 0.45;
     transition: filter 0.3s ease, opacity 0.3s ease;
   }
 
-  /* Lit: full-saturation ink with a warm backlit glow */
+  /* Lit: natural full-strength ink, no added glow */
   .stage.is-lit .lamp .flower {
-    filter:
-      saturate(1.3) brightness(1.05)
-      drop-shadow(0 0 4px rgba(255, 140, 40, 0.9))
-      drop-shadow(0 0 10px rgba(255, 120, 30, 0.55));
+    filter: none;
     opacity: 1;
   }
 
