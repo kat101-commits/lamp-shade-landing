@@ -181,15 +181,26 @@
     opacity: 0.9;
   }
 
-  /* Flower / custom artwork, nested relative to its panel */
+  /* Flower / custom artwork, corner-pinned onto the panel's angled
+     quad via warpToQuad() (see script) rather than a flat inset. */
   .lamp .panel-left .flower,
   .lamp .panel-right .flower {
     position: absolute;
-    left: 23.35%;
-    top: 20.82%;
-    width: 55.47%;
-    height: 58.51%;
-    object-fit: cover;
+    left: 0;
+    top: 0;
+    /* Unlit: muted, low-contrast ink with no glow */
+    filter: saturate(0.45) brightness(0.7) sepia(0.25);
+    opacity: 0.6;
+    transition: filter 0.3s ease, opacity 0.3s ease;
+  }
+
+  /* Lit: full-saturation ink with a warm backlit glow */
+  .stage.is-lit .lamp .flower {
+    filter:
+      saturate(1.3) brightness(1.05)
+      drop-shadow(0 0 4px rgba(255, 140, 40, 0.9))
+      drop-shadow(0 0 10px rgba(255, 120, 30, 0.55));
+    opacity: 1;
   }
 
   /* Warm tint that washes over the top + both panels when lit */
@@ -209,6 +220,7 @@
     top: 37.71%;
     width: 4.24%;
     height: 69.12%;
+    transform: scaleX(-1);
     z-index: 4;
   }
 
@@ -217,7 +229,6 @@
     top: 37.61%;
     width: 4.24%;
     height: 69.12%;
-    transform: scaleX(-1);
     z-index: 4;
   }
 
@@ -473,24 +484,134 @@ So this project is inspired by that.</p>
     designer.classList.remove('is-open');
   });
 
+  // ---- Perspective-correct panel compositing --------------------------
+  // Maps a flat rectangular image onto an arbitrary quadrilateral using a
+  // full projective homography (not a simple skew), so drawn art sits on
+  // the lamp's angled panel faces like paper pinned to the frame.
+
+  // Classic unit-square -> quad DLT, scaled for an arbitrary source size.
+  function computeHomography(w, h, tl, tr, br, bl) {
+    const dx1 = tr.x - br.x, dx2 = bl.x - br.x, dx3 = tl.x - tr.x + br.x - bl.x;
+    const dy1 = tr.y - br.y, dy2 = bl.y - br.y, dy3 = tl.y - tr.y + br.y - bl.y;
+
+    let a, b, c, d, e, f, g, h2;
+    if (Math.abs(dx3) < 1e-9 && Math.abs(dy3) < 1e-9) {
+      a = tr.x - tl.x; b = br.x - tr.x; c = tl.x;
+      d = tr.y - tl.y; e = br.y - tr.y; f = tl.y;
+      g = 0; h2 = 0;
+    } else {
+      const den = dx1 * dy2 - dx2 * dy1;
+      g = (dx3 * dy2 - dx2 * dy3) / den;
+      h2 = (dx1 * dy3 - dx3 * dy1) / den;
+      a = tr.x - tl.x + g * tr.x;
+      b = bl.x - tl.x + h2 * bl.x;
+      c = tl.x;
+      d = tr.y - tl.y + g * tr.y;
+      e = bl.y - tl.y + h2 * bl.y;
+      f = tl.y;
+    }
+
+    // Compose with a scale from the source's own WxH down to the unit
+    // square this formula assumes.
+    return {
+      a: a / w, b: b / h, c,
+      d: d / w, e: e / h, f,
+      g: g / w, h: h2 / h, i: 1,
+    };
+  }
+
+  function warpToQuad(el, corners) {
+    const w = el.naturalWidth || el.width;
+    const h = el.naturalHeight || el.height;
+    if (!w || !h) return;
+    const { a, b, c, d, e, f, g, h: hh, i } = computeHomography(
+      w, h, corners.tl, corners.tr, corners.br, corners.bl
+    );
+    el.style.width = w + 'px';
+    el.style.height = h + 'px';
+    el.style.transformOrigin = '0 0';
+    el.style.transform =
+      `matrix3d(${a},${d},0,${g}, ${b},${e},0,${hh}, 0,0,1,0, ${c},${f},0,${i})`;
+  }
+
+  // Exact panel-face corners, read from the panel vector geometry in
+  // Figma and expressed as fractions of each panel container's own box.
+  const panelCorners = {
+    right: {
+      tlFrac: { x: 0, y: 0.270772 },
+      trFrac: { x: 1, y: 0 },
+      brFrac: { x: 1, y: 0.728417 },
+      blFrac: { x: 0, y: 1 },
+    },
+    left: {
+      tlFrac: { x: 0, y: 0 },
+      trFrac: { x: 1, y: 0.268038 },
+      brFrac: { x: 0.996928, y: 1 },
+      blFrac: { x: 0, y: 0.730153 },
+    },
+  };
+
+  function warpPanelArt(panelEl, imgEl, fracs) {
+    const w = panelEl.offsetWidth;
+    const h = panelEl.offsetHeight;
+    if (!w || !h) return;
+    const toPx = (f) => ({ x: f.x * w, y: f.y * h });
+    warpToQuad(imgEl, {
+      tl: toPx(fracs.tlFrac),
+      tr: toPx(fracs.trFrac),
+      br: toPx(fracs.brFrac),
+      bl: toPx(fracs.blFrac),
+    });
+  }
+
+  const leftPanelEl = document.querySelector('.panel-left');
+  const rightPanelEl = document.querySelector('.panel-right');
+  const leftFlowerEl = document.querySelector('.panel-left .flower');
+  const rightFlowerEl = document.querySelector('.panel-right .flower');
+
+  function recomputeAllWarps() {
+    if (leftFlowerEl.style.display !== 'none') {
+      warpPanelArt(leftPanelEl, leftFlowerEl, panelCorners.left);
+    }
+    if (rightFlowerEl.style.display !== 'none') {
+      warpPanelArt(rightPanelEl, rightFlowerEl, panelCorners.right);
+    }
+  }
+
+  function warpWhenReady(imgEl, panelEl, fracs) {
+    if (!imgEl.getAttribute('src')) return;
+    if (imgEl.complete && imgEl.naturalWidth) {
+      warpPanelArt(panelEl, imgEl, fracs);
+    } else {
+      imgEl.addEventListener('load', () => warpPanelArt(panelEl, imgEl, fracs), { once: true });
+    }
+  }
+
+  let resizeTimer;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(recomputeAllWarps, 100);
+  });
+
   // Apply artwork drawn on the "Design your own lamp shade" screen, if any.
   if (localStorage.getItem('lampCustomized') === '1') {
     const leftArt = localStorage.getItem('lampLeftArt');
     const rightArt = localStorage.getItem('lampRightArt');
-    const leftFlower = document.querySelector('.panel-left .flower');
-    const rightFlower = document.querySelector('.panel-right .flower');
 
     if (leftArt) {
-      leftFlower.src = leftArt;
-      leftFlower.style.display = 'block';
+      leftFlowerEl.src = leftArt;
+      leftFlowerEl.style.display = 'block';
     }
     if (rightArt) {
-      rightFlower.src = rightArt;
-      rightFlower.style.display = 'block';
+      rightFlowerEl.src = rightArt;
+      rightFlowerEl.style.display = 'block';
     } else {
-      rightFlower.style.display = 'none';
+      rightFlowerEl.style.display = 'none';
     }
   }
+
+  warpWhenReady(leftFlowerEl, leftPanelEl, panelCorners.left);
+  warpWhenReady(rightFlowerEl, rightPanelEl, panelCorners.right);
 
   if (new URLSearchParams(location.search).get('lit') === '1' && !toggle.classList.contains('is-on')) {
     toggle.click();
