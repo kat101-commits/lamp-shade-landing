@@ -176,14 +176,22 @@
     mix-blend-mode: overlay;
   }
 
+  /* Pine: fine, closely-spaced parallel grain running the long axis,
+     warm honey/tan tint (not neutral gray). */
   .grain-wood {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='w'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.012 0.28' numOctaves='2' seed='7' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.55 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23w)'/%3E%3C/svg%3E");
-    opacity: 0.55;
+    background-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20width%3D%27160%27%20height%3D%27160%27%3E%3Cfilter%20id%3D%27w%27%3E%3CfeTurbulence%20type%3D%27fractalNoise%27%20baseFrequency%3D%270.045%200.006%27%20numOctaves%3D%273%27%20seed%3D%279%27%20stitchTiles%3D%27stitch%27%20result%3D%27n%27/%3E%3CfeColorMatrix%20in%3D%27n%27%20type%3D%27matrix%27%20values%3D%270.4%200%200%200%200.32%200.28%200%200%200%200.20%200.15%200%200%200%200.08%200%200%200%200%201%27/%3E%3C/filter%3E%3Crect%20width%3D%27100%25%27%20height%3D%27100%25%27%20filter%3D%27url%28%23w%29%27/%3E%3C/svg%3E");
+    background-size: 160px 160px;
+    mix-blend-mode: soft-light;
+    opacity: 0.85;
   }
 
+  /* Mulberry (hanji) paper: long fibrous strands crossing in random
+     directions -- two perpendicular anisotropic turbulence layers
+     screened together, tinted warm cream rather than neutral gray. */
   .grain-paper {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='p'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.55' numOctaves='3' seed='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.85 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23p)'/%3E%3C/svg%3E");
-    opacity: 0.7;
+    background-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20width%3D%27160%27%20height%3D%27160%27%3E%3Cfilter%20id%3D%27p%27%3E%3CfeTurbulence%20type%3D%27turbulence%27%20baseFrequency%3D%270.5%200.015%27%20numOctaves%3D%272%27%20seed%3D%2711%27%20stitchTiles%3D%27stitch%27%20result%3D%27f1%27/%3E%3CfeTurbulence%20type%3D%27turbulence%27%20baseFrequency%3D%270.015%200.5%27%20numOctaves%3D%272%27%20seed%3D%2723%27%20stitchTiles%3D%27stitch%27%20result%3D%27f2%27/%3E%3CfeBlend%20in%3D%27f1%27%20in2%3D%27f2%27%20mode%3D%27screen%27%20result%3D%27fibers%27/%3E%3CfeColorMatrix%20in%3D%27fibers%27%20type%3D%27matrix%27%20values%3D%270%200%200%200%200.97%200%200%200%200%200.92%200%200%200%200%200.80%200.55%200%200%200%200%27/%3E%3C/filter%3E%3Crect%20width%3D%27100%25%27%20height%3D%27100%25%27%20filter%3D%27url%28%23p%29%27/%3E%3C/svg%3E");
+    background-size: 160px 160px;
+    opacity: 0.8;
   }
 
   .grain-mask-frame {
