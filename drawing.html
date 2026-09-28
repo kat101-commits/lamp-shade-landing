@@ -341,18 +341,37 @@
       const pos = getPos(canvas, e);
       ctx.lineJoin = 'round';
       ctx.lineCap = 'round';
-      ctx.lineWidth = brushSize;
+
       if (tool === 'eraser') {
         ctx.globalCompositeOperation = 'destination-out';
         ctx.strokeStyle = 'rgba(0,0,0,1)';
+        ctx.lineWidth = brushSize;
+        ctx.beginPath();
+        ctx.moveTo(last.x, last.y);
+        ctx.lineTo(pos.x, pos.y);
+        ctx.stroke();
       } else {
+        // Layer several jittered, semi-transparent passes per segment
+        // instead of one clean line, so it reads as waxy crayon
+        // texture rather than a flat vector stroke.
         ctx.globalCompositeOperation = 'source-over';
         ctx.strokeStyle = color;
+        const passes = 4;
+        const jitter = brushSize * 0.18;
+        for (let i = 0; i < passes; i++) {
+          const ox1 = (Math.random() - 0.5) * jitter;
+          const oy1 = (Math.random() - 0.5) * jitter;
+          const ox2 = (Math.random() - 0.5) * jitter;
+          const oy2 = (Math.random() - 0.5) * jitter;
+          ctx.globalAlpha = 0.32 + Math.random() * 0.25;
+          ctx.lineWidth = brushSize * (0.8 + Math.random() * 0.35);
+          ctx.beginPath();
+          ctx.moveTo(last.x + ox1, last.y + oy1);
+          ctx.lineTo(pos.x + ox2, pos.y + oy2);
+          ctx.stroke();
+        }
+        ctx.globalAlpha = 1;
       }
-      ctx.beginPath();
-      ctx.moveTo(last.x, last.y);
-      ctx.lineTo(pos.x, pos.y);
-      ctx.stroke();
       last = pos;
       drawnFlags[key] = true;
     }

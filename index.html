@@ -591,6 +591,10 @@ So this project is inspired by that.</p>
   });
 
   // Apply artwork drawn on the "Design your own lamp shade" screen, if any.
+  // This is single-use: clear it right after applying so a plain page
+  // refresh (not arriving fresh from the drawing screen) always falls
+  // back to the default flower, instead of the customization sticking
+  // around forever in localStorage.
   if (localStorage.getItem('lampCustomized') === '1') {
     const leftArt = localStorage.getItem('lampLeftArt');
     const rightArt = localStorage.getItem('lampRightArt');
@@ -605,6 +609,10 @@ So this project is inspired by that.</p>
     } else {
       rightFlowerEl.style.display = 'none';
     }
+
+    localStorage.removeItem('lampCustomized');
+    localStorage.removeItem('lampLeftArt');
+    localStorage.removeItem('lampRightArt');
   }
 
   warpWhenReady(leftFlowerEl, leftPanelEl, panelCorners.left);
