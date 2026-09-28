@@ -78,6 +78,7 @@
 
   .panel-label {
     font-size: 16px;
+    font-style: italic;
     padding-bottom: 8px;
     border-bottom: 1px solid #fff;
   }
@@ -111,12 +112,19 @@
     align-items: center;
     gap: 28px;
     padding: 18px 32px;
-    background: rgba(239, 239, 239, 0.3);
+    background: rgba(239, 239, 239, 0.5);
     border: 1px solid #fff;
     border-radius: 1000px;
     max-width: 94vw;
     flex-wrap: wrap;
     justify-content: center;
+  }
+
+  .toolbar-divider {
+    align-self: stretch;
+    width: 1px;
+    background: #fff;
+    margin: -18px 0;
   }
 
   .tool-btn {
@@ -168,9 +176,9 @@
   }
 
   .color-row {
-    display: flex;
-    align-items: center;
-    gap: 16px;
+    display: grid;
+    grid-template-columns: repeat(3, auto);
+    gap: 8px 24px;
   }
 
   .color-swatch {
@@ -192,6 +200,7 @@
   @media (max-width: 720px) {
     .panels-row { gap: 32px; padding-top: 24px; margin-top: 0; }
     .toolbar { gap: 16px; padding: 14px 20px; }
+    .toolbar-divider { display: none; }
     .brush-group { gap: 12px; padding: 6px 12px; }
     .color-row { gap: 10px; }
   }
@@ -220,13 +229,6 @@
     </div>
 
     <div class="toolbar">
-      <button class="tool-btn" id="toolPencil" type="button" aria-label="Pencil">
-        <img src="assets/tool-pencil.svg" alt="">
-      </button>
-      <button class="tool-btn" id="toolEraser" type="button" aria-label="Eraser">
-        <img src="assets/tool-eraser.svg" alt="">
-      </button>
-
       <div class="brush-group">
         <button class="brush-btn" id="brushSmall" type="button" aria-label="Small brush">
           <img src="assets/brush-small.svg" alt="">
@@ -239,13 +241,24 @@
         </button>
       </div>
 
+      <div class="toolbar-divider"></div>
+
+      <button class="tool-btn" id="toolPencil" type="button" aria-label="Pencil">
+        <img src="assets/tool-pencil.svg" alt="">
+      </button>
+      <button class="tool-btn" id="toolEraser" type="button" aria-label="Eraser">
+        <img src="assets/tool-eraser.svg" alt="">
+      </button>
+
+      <div class="toolbar-divider"></div>
+
       <div class="color-row">
-        <button class="color-swatch" style="background:#f30000" data-color="#f30000" aria-label="Red"></button>
-        <button class="color-swatch" style="background:#ff8a00" data-color="#ff8a00" aria-label="Orange"></button>
-        <button class="color-swatch" style="background:#ffe600" data-color="#ffe600" aria-label="Yellow"></button>
-        <button class="color-swatch" style="background:#128a0d" data-color="#128a0d" aria-label="Green"></button>
-        <button class="color-swatch" style="background:#0066ff" data-color="#0066ff" aria-label="Blue"></button>
-        <button class="color-swatch" style="background:#9c1cb0" data-color="#9c1cb0" aria-label="Purple"></button>
+        <button class="color-swatch" style="background:#ff0000" data-color="#ff0000" aria-label="Red"></button>
+        <button class="color-swatch" style="background:#ff9500" data-color="#ff9500" aria-label="Orange"></button>
+        <button class="color-swatch" style="background:#fff600" data-color="#fff600" aria-label="Yellow"></button>
+        <button class="color-swatch" style="background:#018003" data-color="#018003" aria-label="Green"></button>
+        <button class="color-swatch" style="background:#005cdd" data-color="#005cdd" aria-label="Blue"></button>
+        <button class="color-swatch" style="background:#9600ae" data-color="#9600ae" aria-label="Purple"></button>
       </div>
     </div>
   </div>
@@ -263,7 +276,7 @@
 
   const brushSizes = { small: 4, medium: 9, large: 16 };
   let tool = 'pencil';
-  let color = '#f30000';
+  let color = '#ff0000';
   let brushSize = brushSizes.medium;
 
   function getPos(canvas, evt) {
