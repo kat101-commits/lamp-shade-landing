@@ -81,19 +81,10 @@
     left: calc(100% - 24px);
   }
 
-  /* The knob artwork is a 32x32 asset (circle + drop-shadow bleed)
-     sitting inside a nominal 24x24 layout box -- per Figma's own
-     inset (0% top, 16.67% left/right, 33.33% bottom), the circle
-     itself is offset left/up within that asset. Position at its
-     native size so the visible circle -- not the shadow bleed --
-     centers in the 24x24 slot. */
   .light-toggle .knob img {
     display: block;
-    position: absolute;
-    left: -4px;
-    top: 0;
-    width: 32px;
-    height: 32px;
+    width: 100%;
+    height: 100%;
   }
 
   .light-toggle .toggle-text {
@@ -222,7 +213,7 @@
 
   /* Front corner posts — rendered above the glowing panels */
   .lamp .post-a {
-    left: 42.17%;
+    left: 40.09%;
     top: 37.74%;
     width: 4.24%;
     height: 69.12%;
