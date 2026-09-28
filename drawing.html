@@ -351,26 +351,53 @@
         ctx.lineTo(pos.x, pos.y);
         ctx.stroke();
       } else {
-        // Layer several jittered, semi-transparent passes per segment
-        // instead of one clean line, so it reads as waxy crayon
-        // texture rather than a flat vector stroke.
-        ctx.globalCompositeOperation = 'source-over';
+        // Match the default flower art's own technique: hand-wobbled
+        // fills layered with a darkening blend at ~63% opacity
+        // (its group uses mix-blend-mode: plus-darker, which canvas
+        // doesn't support -- multiply is the closest available and
+        // gives the same "overlapping passes darken further" quality).
+        ctx.globalCompositeOperation = 'multiply';
         ctx.strokeStyle = color;
+        ctx.fillStyle = color;
         const passes = 4;
-        const jitter = brushSize * 0.18;
+        const jitter = brushSize * 0.22;
         for (let i = 0; i < passes; i++) {
           const ox1 = (Math.random() - 0.5) * jitter;
           const oy1 = (Math.random() - 0.5) * jitter;
           const ox2 = (Math.random() - 0.5) * jitter;
           const oy2 = (Math.random() - 0.5) * jitter;
-          ctx.globalAlpha = 0.32 + Math.random() * 0.25;
+          ctx.globalAlpha = 0.45 + Math.random() * 0.3;
           ctx.lineWidth = brushSize * (0.8 + Math.random() * 0.35);
           ctx.beginPath();
           ctx.moveTo(last.x + ox1, last.y + oy1);
           ctx.lineTo(pos.x + ox2, pos.y + oy2);
           ctx.stroke();
         }
+
+        // Small dabs stamped along the stroke's edges, perpendicular
+        // to its direction, to break up the silhouette into the same
+        // jagged/toothy edge the flower art has, instead of a smooth
+        // wavy outline.
+        const dx = pos.x - last.x;
+        const dy = pos.y - last.y;
+        const len = Math.hypot(dx, dy) || 1;
+        const nx = -dy / len;
+        const ny = dx / len;
+        const dabCount = 3;
+        for (let i = 0; i < dabCount; i++) {
+          const t = Math.random();
+          const px = last.x + dx * t;
+          const py = last.y + dy * t;
+          const edge = (Math.random() < 0.5 ? -1 : 1) * (brushSize * 0.35 + Math.random() * brushSize * 0.25);
+          const r = brushSize * (0.15 + Math.random() * 0.2);
+          ctx.globalAlpha = 0.4 + Math.random() * 0.3;
+          ctx.beginPath();
+          ctx.arc(px + nx * edge, py + ny * edge, r, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
         ctx.globalAlpha = 1;
+        ctx.globalCompositeOperation = 'source-over';
       }
       last = pos;
       drawnFlags[key] = true;
