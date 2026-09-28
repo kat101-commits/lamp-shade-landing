@@ -15,22 +15,43 @@
 
   html, body {
     margin: 0;
-    min-height: 100%;
+    height: 100%;
     background: var(--bg);
     color: #fff;
     font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
   }
 
-  .page {
-    position: relative;
+  /* The whole composition is authored at a fixed 1440x1024 design
+     size (matching the Figma desktop frame) and scaled as one unit
+     to fit the viewport -- responsive via scale, not reflow. */
+  .viewport {
+    width: 100%;
+    height: 100%;
     min-height: 100vh;
-    padding: 24px 24px 220px;
+    overflow: auto;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+  }
+
+  .scale-outer {
+    position: relative;
+    flex-shrink: 0;
+  }
+
+  .scale-wrap {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 1440px;
+    height: 1024px;
+    transform-origin: top left;
   }
 
   .done-btn {
     position: absolute;
-    top: 5%;
-    right: 4%;
+    left: 1059px;
+    top: 41px;
     display: inline-flex;
     align-items: center;
     gap: 12px;
@@ -59,75 +80,66 @@
     height: 13px;
   }
 
-  .panels-row {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    align-items: flex-start;
-    gap: 80px;
-    padding-top: 12%;
-    margin-top: -150px;
-  }
-
-  .panel-block {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 12px;
-  }
-
   .panel-label {
-    font-size: 16px;
+    position: absolute;
+    margin: 0;
+    font-size: 20px;
     font-style: italic;
     padding-bottom: 8px;
     border-bottom: 1px solid #fff;
   }
 
+  .panel-label.left { left: 122px; top: 176px; }
+  .panel-label.right { left: 829px; top: 176px; }
+
   .canvas-frame {
+    position: absolute;
+    top: 244px;
     background: rgba(255, 255, 255, 0.2);
     backdrop-filter: blur(8px) saturate(160%);
     -webkit-backdrop-filter: blur(8px) saturate(160%);
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25);
-    padding: 20px;
-    border-radius: 8px;
+    padding: 23px;
+    border-radius: 6px;
   }
+
+  .canvas-frame.left { left: 122px; }
+  .canvas-frame.right { left: 829px; }
 
   .draw-canvas {
     display: block;
-    width: min(340px, 40vw);
-    height: calc(min(340px, 40vw) * 635 / 605);
+    width: 442px;
+    height: 464px;
     background: #fff6e8;
-    border-radius: 4.38px;
+    border-radius: 3px;
     cursor: crosshair;
     touch-action: none;
   }
 
   /* ---------- Bottom toolbar ---------- */
   .toolbar {
-    position: fixed;
-    bottom: 5%;
-    left: 50%;
-    transform: translateX(-50%);
-    display: flex;
-    align-items: center;
-    gap: 28px;
-    padding: 18px 32px;
+    position: absolute;
+    left: 393px;
+    top: 873px;
+    width: 653px;
+    height: 102px;
     background: rgba(239, 239, 239, 0.5);
     border: 1px solid #fff;
     border-radius: 1000px;
-    max-width: 94vw;
-    flex-wrap: wrap;
-    justify-content: center;
   }
 
   .toolbar-divider {
-    align-self: stretch;
+    position: absolute;
     width: 1px;
     background: #fff;
-    margin: -18px 0;
   }
 
+  .toolbar-divider.d1 { left: 228px; top: -21px; height: 136px; }
+  .toolbar-divider.d2 { left: 423px; top: -12px; height: 136px; }
+
   .tool-btn {
+    position: absolute;
+    top: 22px;
     height: 100px;
     width: auto;
     padding: 0;
@@ -135,10 +147,11 @@
     border: none;
     cursor: pointer;
     opacity: 0.65;
-    display: flex;
-    align-items: flex-end;
     transition: opacity 0.2s ease, transform 0.2s ease;
   }
+
+  .tool-btn.eraser { left: 264px; }
+  .tool-btn.pencil { left: 341px; }
 
   .tool-btn img {
     display: block;
@@ -152,17 +165,22 @@
   }
 
   .brush-group {
+    position: absolute;
+    left: 16px;
+    top: 23px;
+    width: 208px;
+    height: 56px;
     display: flex;
     align-items: center;
-    gap: 20px;
+    justify-content: space-between;
     border: 0.8px solid #e8e8e8;
     border-radius: 6.4px;
     padding: 8px 20px;
   }
 
   .brush-btn {
-    width: 50px;
-    height: 50px;
+    width: 40px;
+    height: 40px;
     padding: 0;
     background: none;
     border: none;
@@ -175,9 +193,14 @@
     height: 100%;
   }
 
-  .color-row {
+  .color-grid {
+    position: absolute;
+    left: 841px;
+    top: 882px;
+    width: 160px;
+    height: 88px;
     display: grid;
-    grid-template-columns: repeat(3, auto);
+    grid-template-columns: repeat(3, 32px);
     gap: 8px 24px;
   }
 
@@ -196,74 +219,85 @@
     box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px #fff;
     transform: scale(1.05);
   }
-
-  @media (max-width: 720px) {
-    .panels-row { gap: 32px; padding-top: 24px; margin-top: 0; }
-    .toolbar { gap: 16px; padding: 14px 20px; }
-    .toolbar-divider { display: none; }
-    .brush-group { gap: 12px; padding: 6px 12px; }
-    .color-row { gap: 10px; }
-  }
 </style>
 </head>
 <body>
-  <div class="page">
-    <button class="done-btn" id="doneBtn" type="button">
-      Done - Let’s Turn on the lights
-      <img src="assets/create-arrow.svg" alt="">
-    </button>
+  <div class="viewport">
+    <div class="scale-outer" id="scaleOuter">
+      <div class="scale-wrap" id="scaleWrap">
+        <button class="done-btn" id="doneBtn" type="button">
+          Done - Let’s Turn on the lights
+          <img src="assets/create-arrow.svg" alt="">
+        </button>
 
-    <div class="panels-row">
-      <div class="panel-block">
-        <p class="panel-label">Left Panel</p>
-        <div class="canvas-frame">
+        <p class="panel-label left">Left Panel</p>
+        <div class="canvas-frame left">
           <canvas class="draw-canvas" id="leftCanvas" width="524" height="550"></canvas>
         </div>
-      </div>
-      <div class="panel-block">
-        <p class="panel-label">Right Panel</p>
-        <div class="canvas-frame">
+
+        <p class="panel-label right">Right Panel</p>
+        <div class="canvas-frame right">
           <canvas class="draw-canvas" id="rightCanvas" width="524" height="550"></canvas>
         </div>
-      </div>
-    </div>
 
-    <div class="toolbar">
-      <div class="brush-group">
-        <button class="brush-btn" id="brushSmall" type="button" aria-label="Small brush">
-          <img src="assets/brush-small.svg" alt="">
-        </button>
-        <button class="brush-btn" id="brushMedium" type="button" aria-label="Medium brush">
-          <img src="assets/brush-medium.svg" alt="">
-        </button>
-        <button class="brush-btn" id="brushLarge" type="button" aria-label="Large brush">
-          <img src="assets/brush-large.svg" alt="">
-        </button>
-      </div>
+        <div class="toolbar">
+          <div class="brush-group">
+            <button class="brush-btn" id="brushSmall" type="button" aria-label="Small brush">
+              <img src="assets/brush-small.svg" alt="">
+            </button>
+            <button class="brush-btn" id="brushMedium" type="button" aria-label="Medium brush">
+              <img src="assets/brush-medium.svg" alt="">
+            </button>
+            <button class="brush-btn" id="brushLarge" type="button" aria-label="Large brush">
+              <img src="assets/brush-large.svg" alt="">
+            </button>
+          </div>
 
-      <div class="toolbar-divider"></div>
+          <div class="toolbar-divider d1"></div>
 
-      <button class="tool-btn" id="toolPencil" type="button" aria-label="Pencil">
-        <img src="assets/tool-pencil.svg" alt="">
-      </button>
-      <button class="tool-btn" id="toolEraser" type="button" aria-label="Eraser">
-        <img src="assets/tool-eraser.svg" alt="">
-      </button>
+          <button class="tool-btn pencil" id="toolPencil" type="button" aria-label="Pencil">
+            <img src="assets/tool-pencil.svg" alt="">
+          </button>
+          <button class="tool-btn eraser" id="toolEraser" type="button" aria-label="Eraser">
+            <img src="assets/tool-eraser.svg" alt="">
+          </button>
 
-      <div class="toolbar-divider"></div>
+          <div class="toolbar-divider d2"></div>
+        </div>
 
-      <div class="color-row">
-        <button class="color-swatch" style="background:#ff0000" data-color="#ff0000" aria-label="Red"></button>
-        <button class="color-swatch" style="background:#ff9500" data-color="#ff9500" aria-label="Orange"></button>
-        <button class="color-swatch" style="background:#fff600" data-color="#fff600" aria-label="Yellow"></button>
-        <button class="color-swatch" style="background:#018003" data-color="#018003" aria-label="Green"></button>
-        <button class="color-swatch" style="background:#005cdd" data-color="#005cdd" aria-label="Blue"></button>
-        <button class="color-swatch" style="background:#9600ae" data-color="#9600ae" aria-label="Purple"></button>
+        <div class="color-grid">
+          <button class="color-swatch" style="background:#ff0000" data-color="#ff0000" aria-label="Red"></button>
+          <button class="color-swatch" style="background:#ff9500" data-color="#ff9500" aria-label="Orange"></button>
+          <button class="color-swatch" style="background:#fff600" data-color="#fff600" aria-label="Yellow"></button>
+          <button class="color-swatch" style="background:#018003" data-color="#018003" aria-label="Green"></button>
+          <button class="color-swatch" style="background:#005cdd" data-color="#005cdd" aria-label="Blue"></button>
+          <button class="color-swatch" style="background:#9600ae" data-color="#9600ae" aria-label="Purple"></button>
+        </div>
       </div>
     </div>
   </div>
 
 <script>
+  // ---- Scale the whole fixed-size composition to fit the viewport ----
+  const DESIGN_W = 1440;
+  const DESIGN_H = 1024;
+  const MIN_SCALE = 0.35;
+  const scaleOuter = document.getElementById('scaleOuter');
+  const scaleWrap = document.getElementById('scaleWrap');
+
+  function applyScale() {
+    const factor = Math.max(
+      Math.min(window.innerWidth / DESIGN_W, window.innerHeight / DESIGN_H),
+      MIN_SCALE
+    );
+    scaleWrap.style.transform = `scale(${factor})`;
+    scaleOuter.style.width = (DESIGN_W * factor) + 'px';
+    scaleOuter.style.height = (DESIGN_H * factor) + 'px';
+  }
+
+  applyScale();
+  window.addEventListener('resize', applyScale);
+
   const canvases = {
     left: document.getElementById('leftCanvas'),
     right: document.getElementById('rightCanvas'),
