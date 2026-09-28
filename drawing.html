@@ -116,31 +116,33 @@
     touch-action: none;
   }
 
-  /* ---------- Bottom toolbar ---------- */
+  /* ---------- Bottom toolbar ----------
+     Positioned by JS to track the scaled canvas (its left/top origin
+     scales), but the toolbar's own size and every child inside it
+     stay fixed -- swatches stay a tappable 32px and nothing here
+     shrinks or overflows the pill at small scales. */
   .toolbar {
     position: absolute;
-    left: 393px;
-    top: 873px;
-    width: 653px;
     height: 102px;
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    padding: 0 24px;
     background: rgba(239, 239, 239, 0.5);
     border: 1px solid #fff;
     border-radius: 1000px;
+    white-space: nowrap;
   }
 
   .toolbar-divider {
-    position: absolute;
+    align-self: stretch;
     width: 1px;
+    margin: 14px 0;
     background: #fff;
   }
 
-  .toolbar-divider.d1 { left: 228px; top: -21px; height: 136px; }
-  .toolbar-divider.d2 { left: 423px; top: -12px; height: 136px; }
-
   .tool-btn {
-    position: absolute;
-    top: 22px;
-    height: 100px;
+    height: 90px;
     width: auto;
     padding: 0;
     background: none;
@@ -149,9 +151,6 @@
     opacity: 0.65;
     transition: opacity 0.2s ease, transform 0.2s ease;
   }
-
-  .tool-btn.eraser { left: 264px; }
-  .tool-btn.pencil { left: 341px; }
 
   .tool-btn img {
     display: block;
@@ -165,14 +164,9 @@
   }
 
   .brush-group {
-    position: absolute;
-    left: 16px;
-    top: 23px;
-    width: 208px;
-    height: 56px;
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    gap: 20px;
     border: 0.8px solid #e8e8e8;
     border-radius: 6.4px;
     padding: 8px 20px;
@@ -194,11 +188,6 @@
   }
 
   .color-grid {
-    position: absolute;
-    left: 841px;
-    top: 882px;
-    width: 160px;
-    height: 88px;
     display: grid;
     grid-template-columns: repeat(3, 32px);
     gap: 8px 24px;
@@ -240,30 +229,31 @@
           <canvas class="draw-canvas" id="rightCanvas" width="524" height="550"></canvas>
         </div>
 
-        <div class="toolbar">
-          <div class="brush-group">
-            <button class="brush-btn" id="brushSmall" type="button" aria-label="Small brush">
-              <img src="assets/brush-small.svg" alt="">
-            </button>
-            <button class="brush-btn" id="brushMedium" type="button" aria-label="Medium brush">
-              <img src="assets/brush-medium.svg" alt="">
-            </button>
-            <button class="brush-btn" id="brushLarge" type="button" aria-label="Large brush">
-              <img src="assets/brush-large.svg" alt="">
-            </button>
-          </div>
+      </div>
 
-          <div class="toolbar-divider d1"></div>
-
-          <button class="tool-btn pencil" id="toolPencil" type="button" aria-label="Pencil">
-            <img src="assets/tool-pencil.svg" alt="">
+      <div class="toolbar" id="toolbar">
+        <div class="brush-group">
+          <button class="brush-btn" id="brushSmall" type="button" aria-label="Small brush">
+            <img src="assets/brush-small.svg" alt="">
           </button>
-          <button class="tool-btn eraser" id="toolEraser" type="button" aria-label="Eraser">
-            <img src="assets/tool-eraser.svg" alt="">
+          <button class="brush-btn" id="brushMedium" type="button" aria-label="Medium brush">
+            <img src="assets/brush-medium.svg" alt="">
           </button>
-
-          <div class="toolbar-divider d2"></div>
+          <button class="brush-btn" id="brushLarge" type="button" aria-label="Large brush">
+            <img src="assets/brush-large.svg" alt="">
+          </button>
         </div>
+
+        <div class="toolbar-divider"></div>
+
+        <button class="tool-btn pencil" id="toolPencil" type="button" aria-label="Pencil">
+          <img src="assets/tool-pencil.svg" alt="">
+        </button>
+        <button class="tool-btn eraser" id="toolEraser" type="button" aria-label="Eraser">
+          <img src="assets/tool-eraser.svg" alt="">
+        </button>
+
+        <div class="toolbar-divider"></div>
 
         <div class="color-grid">
           <button class="color-swatch" style="background:#ff0000" data-color="#ff0000" aria-label="Red"></button>
@@ -284,6 +274,14 @@
   const MIN_SCALE = 0.35;
   const scaleOuter = document.getElementById('scaleOuter');
   const scaleWrap = document.getElementById('scaleWrap');
+  const toolbar = document.getElementById('toolbar');
+
+  // Design-space origin of the toolbar (matches its old left/top inside
+  // the 1440x1024 frame) -- its position tracks the scale, but the
+  // toolbar's own size and everything inside it stay fixed, so nothing
+  // shrinks below a tappable size or overflows the pill.
+  const TOOLBAR_X = 393;
+  const TOOLBAR_Y = 873;
 
   function applyScale() {
     const factor = Math.max(
@@ -293,6 +291,8 @@
     scaleWrap.style.transform = `scale(${factor})`;
     scaleOuter.style.width = (DESIGN_W * factor) + 'px';
     scaleOuter.style.height = (DESIGN_H * factor) + 'px';
+    toolbar.style.left = (TOOLBAR_X * factor) + 'px';
+    toolbar.style.top = (TOOLBAR_Y * factor) + 'px';
   }
 
   applyScale();
