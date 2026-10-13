@@ -8,7 +8,41 @@
   :root {
     --bg: #29242a;
     --glass: rgba(239, 239, 239, 0.05);
-    --glass-border: rgba(255, 255, 255, 0.3);
+    --glass-border: #fff;
+
+    /* ---------- Realism tuning ----------
+       Values marked [svg] are read once by buildLampFx() (top of <body>)
+       and baked into SVG filters; the rest are live CSS. */
+
+    /* Wood */
+    --grain-strength: 0.3;          /* opacity of the light/dark grain streaks, 0-1 */
+    --grain-scale: 1;               /* [svg] grain frequency: >1 finer/tighter, <1 coarser */
+    --wood-tone-variation: 0.18;    /* [svg] warm/cool colour drift + knots, 0-1 */
+    --wood-tint: #8a5a3c;           /* optional finish colour laid over the wood */
+    --wood-tint-strength: 0;        /* 0 = natural finish; grain survives any tint */
+    --sheen-strength: 0.2;          /* satin highlight brightness, 0-1 */
+    --sheen-follow: 1;              /* how far the sheen drifts with the cursor, 0 = fixed */
+    --front-post-shade: 0.8;        /* brightness of the two front posts, 1 = same as frame */
+
+    /* Paper (currently tuned as smooth, frosted tracing paper; for
+       fibrous mulberry try fibre 0.55 / thickness 0.3 / deckle 5 / opacity 0.9) */
+    --paper-opacity: 0.8;           /* how opaque the sheet is; lower = more see-through */
+    --paper-fiber-opacity: 0.07;    /* [svg] visibility of paper fibres, 0-1 */
+    --paper-fiber-scale: 1;         /* [svg] fibre length: <1 longer/wispier, >1 shorter */
+    --paper-thickness-variation: 0.08; /* [svg] patchy dense vs. thin areas, 0-1 */
+    --paper-deckle: 1.2;            /* [svg] torn-edge irregularity, in lamp units (~0.8px each) */
+
+    /* Edges & shadows */
+    --edge-softness: 0.8;           /* [svg] feathering on every silhouette, in px */
+    --shape-wobble: 1.6;            /* [svg] hand-made wobble of lines/corners, lamp units */
+    --ink-bleed: 0.35px;            /* softening of the drawn art on the paper */
+    --shadow-contact: 0.6;          /* tight shadow where the lamp feet meet the floor, 0-1 */
+    --shadow-ambient: 0.45;         /* wide soft shadow under the whole lamp, 0-1 */
+
+    /* Light & atmosphere */
+    --glow-intensity: 1;            /* light transmitted through the paper when on, 0-1 */
+    --glow-spill: 0.55;             /* warm light bleeding onto wood and floor when on, 0-1 */
+    --film-grain: 0.035;            /* scene-wide noise overlay opacity (2-4% reads as film) */
   }
 
   * { box-sizing: border-box; }
@@ -23,6 +57,19 @@
     overflow: hidden;
   }
 
+  /* Film grain: one static, pre-rendered noise tile over the whole scene
+     (composited once; takes the digital flatness off the dark field). */
+  body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 2147483647;
+    pointer-events: none;
+    opacity: var(--film-grain);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' seed='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 1.6 -0.3 0 0 0 1.6 -0.3 0 0 0 1.6 -0.3 0 0 0 0 1'/%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-size: 240px 240px;
+  }
+
   .stage {
     position: relative;
     width: 100%;
@@ -33,8 +80,8 @@
   /* ---------- Top-right toggle ---------- */
   .toggle-row {
     position: absolute;
-    top: 6%;
-    right: 4%;
+    top: 5.96%;
+    right: 3.89%;
     display: flex;
     align-items: center;
     gap: 30px;
@@ -57,7 +104,7 @@
     border: 0.3px solid var(--glass-border);
     border-radius: 77px;
     width: 82px;
-    height: 41px;
+    height: 40.6px;
     padding: 8px;
     cursor: pointer;
     color: #fff;
@@ -66,32 +113,37 @@
     overflow: hidden;
   }
 
+  /* Knob is drawn in CSS so the circle sits exactly centred in the pill:
+     the same inset on the top, bottom and the near side (40.6px tall,
+     minus the 0.3px border on each side, minus the knob). */
+  .light-toggle {
+    --knob-size: 24px;
+    --knob-inset: calc((40.6px - 0.6px - var(--knob-size)) / 2);
+  }
+
   .light-toggle .knob {
     position: absolute;
     top: 0;
     bottom: 0;
-    left: 0;
+    left: var(--knob-inset);
     margin: auto 0;
-    width: 24px;
-    height: 24px;
+    width: var(--knob-size);
+    height: var(--knob-size);
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 4px 4px rgba(255, 255, 255, 0.05);
     transition: left 0.55s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   .light-toggle.is-on .knob {
-    left: calc(100% - 24px);
-  }
-
-  .light-toggle .knob img {
-    display: block;
-    width: 100%;
-    height: 100%;
+    left: calc(100% - var(--knob-inset) - var(--knob-size));
   }
 
   .light-toggle .toggle-text {
     position: absolute;
     top: 0;
     bottom: 0;
-    left: 32px;
+    left: calc(var(--knob-inset) + var(--knob-size) + 8px);
     right: auto;
     display: flex;
     align-items: center;
@@ -100,7 +152,7 @@
 
   .light-toggle.is-on .toggle-text {
     left: auto;
-    right: 32px;
+    right: calc(var(--knob-inset) + var(--knob-size) + 8px);
   }
 
   /* ---------- Lamp (left-quarter panel) ---------- */
@@ -115,11 +167,39 @@
     aspect-ratio: 718.44 / 744.424;
   }
 
-  .lamp img {
+  .lamp img,
+  .lamp > svg,
+  .lamp > .fx,
+  .lamp .post,
+  .lamp .frame-front {
     position: absolute;
     display: block;
     pointer-events: none;
     user-select: none;
+  }
+
+  /* ---------- Floor: layered contact + ambient shadow, warm light pool ---------- */
+  .lamp .floor {
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+  }
+
+  .floor .shadow-ambient { opacity: var(--shadow-ambient); }
+  .floor .shadow-contact { opacity: var(--shadow-contact); }
+
+  .lamp .floor-glow {
+    left: -30%;
+    top: 55%;
+    width: 160%;
+    height: 70%;
+    background: radial-gradient(closest-side, rgba(255, 196, 128, 0.42), rgba(255, 160, 90, 0.16) 45%, rgba(255, 140, 70, 0) 100%);
+    mix-blend-mode: screen;
+    opacity: 0;
+    transition: opacity 0.8s ease;
+    z-index: 0;
   }
 
   /* Ambient warm bloom behind the whole lamp — off by default */
@@ -143,8 +223,121 @@
     z-index: 1;
   }
 
+  /* Stacking, back to front: paper panels (2) -> warm lighting (3) ->
+     centre post + corner rails + side posts (3, later in DOM) -> front posts (4) */
+  .lamp .frame-front,
+  .lamp .frame-front-svg {
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  .lamp .frame-front { z-index: 3; }
+  .lamp .frame-front-svg { position: absolute; display: block; }
+
+  /* Static, filter-heavy layers are rasterised once and then only
+     composited, so toggling/hover never re-runs the SVG filters. */
+  .lamp .frame,
+  .lamp .top,
+  .lamp .post-svg,
+  .lamp .frame-front-svg,
+  .lamp .paper-fill,
+  .lamp .paper-lit,
+  .lamp .top-lit {
+    will-change: transform;
+  }
+
+  .wood-grain { opacity: var(--grain-strength); }
+
+  /* ---------- Wood surface layers (masked to the wood silhouette) ---------- */
+  .lamp > .fx,
+  .post .fx,
+  .frame-front .fx {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    -webkit-mask: var(--wood-mask) center / 100% 100% no-repeat;
+    mask: var(--wood-mask) center / 100% 100% no-repeat;
+  }
+
+  .lamp > .fx { --wood-mask: url("assets/lamp-frame.svg"); z-index: 1; }
+  .post-a .fx { --wood-mask: url("assets/lamp-post-a.svg"); }
+  .post-b .fx { --wood-mask: url("assets/lamp-post-b.svg"); }
+  .frame-front .fx { --wood-mask: url("assets/lamp-frame-front.svg"); }
+
+  /* Finish colour: "color" blend keeps the wood's own luminance, so the
+     grain shows straight through whatever tint is chosen. */
+  .fx.wood-tint {
+    background: var(--wood-tint);
+    mix-blend-mode: color;
+    opacity: var(--wood-tint-strength);
+  }
+
+  /* Satin sheen: one broad, low-contrast highlight that drifts with the
+     cursor (transform only -- compositor-cheap). */
+  .fx.wood-sheen {
+    overflow: hidden;
+    mix-blend-mode: screen;
+    opacity: var(--sheen-strength);
+  }
+
+  .sheen-spot {
+    position: absolute;
+    left: -15%;
+    top: -12%;
+    width: 85%;
+    height: 75%;
+    background: radial-gradient(closest-side, rgba(255, 238, 222, 1), rgba(255, 228, 205, 0.45) 45%, rgba(255, 220, 190, 0) 100%);
+    transform: translate3d(
+      calc(var(--sheen-x, 0%) + var(--px, 0) * var(--sheen-follow) * 18%),
+      calc(var(--sheen-y, 0%) + var(--py, 0) * var(--sheen-follow) * 12%),
+      0);
+    transition: transform 0.6s cubic-bezier(0.2, 0.7, 0.2, 1);
+    will-change: transform;
+  }
+
+  .post .sheen-spot {
+    left: -60%;
+    width: 220%;
+    height: 45%;
+  }
+
+  /* Lit: the highlight swings toward the glowing shade */
+  .stage.is-lit .sheen-spot {
+    --sheen-x: 28%;
+    --sheen-y: 30%;
+  }
+
+  /* Warm light from the shade bleeding onto nearby wood when lit */
+  .fx.wood-glow {
+    background: radial-gradient(ellipse 55% 48% at 50% 56%, rgba(255, 196, 130, 0.9), rgba(255, 150, 80, 0.35) 55%, rgba(255, 130, 60, 0) 100%);
+    mix-blend-mode: screen;
+    opacity: 0;
+    transition: opacity 0.8s ease;
+  }
+
+  .post .fx.wood-glow {
+    background: linear-gradient(180deg, rgba(255, 190, 120, 0.25), rgba(255, 180, 110, 0.75) 45%, rgba(255, 150, 80, 0.2));
+  }
+
+  .stage.is-lit .fx.wood-glow,
+  .stage.is-lit .lamp .floor-glow {
+    opacity: var(--glow-spill);
+  }
+
+  /* Rails in front of the lit shade are mostly backlit, so they only
+     catch a little of the spill. */
+  .stage.is-lit .frame-front .fx.wood-glow {
+    opacity: calc(var(--glow-spill) * 0.35);
+  }
+
   /* Top diamond cap */
-  .lamp .top {
+  .lamp .top,
+  .lamp .top-lit {
     left: 11.83%;
     top: 10.67%;
     width: 76.60%;
@@ -172,13 +365,40 @@
     z-index: 2;
   }
 
-  .lamp .panel-left img.panel-left-fill,
-  .lamp .panel-right img.panel-right-fill {
+  .lamp .paper-fill {
     position: static;
     width: 100%;
     height: 100%;
     display: block;
-    opacity: 0.9;
+    opacity: var(--paper-opacity);
+  }
+
+  /* Light transmitted through the paper: brightest toward the bulb,
+     modulated by fibre density (built in fx-paperlit-*). Sits under the
+     artwork so ink stays dark against the glow, like real backlit ink. */
+  .lamp .paper-lit {
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  .lamp .paper-lit,
+  .lamp .top-lit {
+    position: absolute;
+    pointer-events: none;
+    mix-blend-mode: screen;
+    opacity: 0;
+    transition: opacity 0.8s ease;
+  }
+
+  .lamp .fibers-lit {
+    mix-blend-mode: multiply;
+  }
+
+  .stage.is-lit .lamp .paper-lit,
+  .stage.is-lit .lamp .top-lit {
+    opacity: var(--glow-intensity);
   }
 
   /* Flower / custom artwork, corner-pinned onto the panel's angled
@@ -189,14 +409,14 @@
     left: 0;
     top: 0;
     /* Unlit: dimmer, slightly muted -- mostly an opacity drop */
-    filter: saturate(0.75);
+    filter: saturate(0.75) blur(var(--ink-bleed));
     opacity: 0.45;
     transition: filter 0.3s ease, opacity 0.3s ease;
   }
 
   /* Lit: natural full-strength ink, no added glow */
   .stage.is-lit .lamp .flower {
-    filter: none;
+    filter: saturate(1) blur(var(--ink-bleed));
     opacity: 1;
   }
 
@@ -207,26 +427,36 @@
     width: 95.15%;
     height: 84.54%;
     opacity: 0;
+    filter: blur(calc(var(--edge-softness) * 1px));
     transition: opacity 0.8s ease;
     z-index: 3;
   }
 
   /* Front corner posts — rendered above the glowing panels */
+  .lamp .post {
+    width: 4.24%;
+    height: 69.12%;
+    z-index: 4;
+  }
+
+  .lamp .post-svg {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    filter: brightness(var(--front-post-shade));
+  }
+
   .lamp .post-a {
     left: 40.09%;
     top: 37.74%;
-    width: 4.24%;
-    height: 69.12%;
     transform: scaleX(-1);
-    z-index: 4;
   }
 
   .lamp .post-b {
     left: 54.00%;
     top: 37.61%;
-    width: 4.24%;
-    height: 69.12%;
-    z-index: 4;
   }
 
   .stage.is-lit .lamp .glow-ambient,
@@ -237,8 +467,8 @@
   /* ---------- Bottom-right "Design your own lamp shade" ---------- */
   .designer {
     position: absolute;
-    bottom: 4%;
-    right: 4%;
+    bottom: 3.85%;
+    right: 3.89%;
     max-width: 90vw;
   }
 
@@ -278,7 +508,7 @@
     background: rgba(239, 239, 239, 0.03);
     backdrop-filter: blur(28px) saturate(160%);
     -webkit-backdrop-filter: blur(28px) saturate(160%);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15), 0 20px 60px rgba(0, 0, 0, 0.35);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15), 0 1px 2px rgba(0, 0, 0, 0.18), 0 6px 16px rgba(0, 0, 0, 0.16), 0 24px 70px rgba(0, 0, 0, 0.3);
     border-radius: 16px;
     color: #fff;
   }
@@ -318,7 +548,7 @@
 
   .designer-card {
     width: 100%;
-    border-radius: 12px;
+    border-radius: 8px;
     box-sizing: border-box;
   }
 
@@ -336,7 +566,7 @@
 
   .designer-story {
     background: rgba(255, 255, 255, 0.04);
-    padding: 20px 16px;
+    padding: 16px;
     display: flex;
     flex-direction: column;
     gap: 8px;
@@ -349,7 +579,7 @@
   .designer-action {
     background: rgba(255, 255, 255, 0.08);
     box-shadow: 8px 12px 17.8px 0px rgba(0, 0, 0, 0.1);
-    padding: 24px 16px;
+    padding: 16px;
     display: flex;
     flex-direction: column;
     align-items: flex-end;
@@ -368,6 +598,7 @@
     align-items: center;
     justify-content: center;
     gap: 12px;
+    width: 201px;
     padding: 10px 40px;
     background: rgba(255, 255, 255, 0.1);
     backdrop-filter: blur(8px) saturate(160%);
@@ -403,30 +634,499 @@
 </style>
 </head>
 <body>
+  <!-- Shared SVG filters for the procedural wood / paper / shadow textures.
+       Built from the CSS tuning variables before the lamp markup is parsed,
+       so the lamp never renders without them. -->
+  <svg id="fx-defs" width="0" height="0" aria-hidden="true" style="position:absolute"></svg>
+  <script>
+  function buildLampFx() {
+    const css = getComputedStyle(document.documentElement);
+    const num = (name, fallback) => {
+      const v = parseFloat(css.getPropertyValue(name));
+      return Number.isFinite(v) ? v : fallback;
+    };
+    const grainScale = num('--grain-scale', 1);
+    const tone = num('--wood-tone-variation', 0.35);
+    const fiberOpacity = num('--paper-fiber-opacity', 0.55);
+    const fiberScale = num('--paper-fiber-scale', 1);
+    const thickness = num('--paper-thickness-variation', 0.4);
+    const deckle = num('--paper-deckle', 5);
+    const wobble = num('--shape-wobble', 1.6);
+    const contact = num('--shadow-contact', 0.6);
+    const ambient = num('--shadow-ambient', 0.45);
+
+    // Every lamp SVG shares the frame's scale (~718 units across the lamp),
+    // so px-based settings convert to SVG units with one factor.
+    const lampPx = innerWidth <= 900 ? innerWidth * 0.45 : Math.min(576, innerWidth * 0.336);
+    const unitsPerPx = 718.44 / lampPx;
+    const edge = num('--edge-softness', 0.8) * unitsPerPx;
+
+    // Feathered silhouette + slight hand-made wobble. The blurred copy sits
+    // under the sharp interior, so only the outline softens -- grain stays crisp.
+    const woodEdge = `
+      <filter id="fx-wood-edge" x="-3%" y="-3%" width="106%" height="106%" color-interpolation-filters="sRGB">
+        <feTurbulence type="fractalNoise" baseFrequency="0.018" numOctaves="2" seed="7" result="wn"/>
+        <feDisplacementMap in="SourceGraphic" in2="wn" scale="${wobble}" xChannelSelector="R" yChannelSelector="G" result="wob"/>
+        <feGaussianBlur in="wob" stdDeviation="${edge}" result="halo"/>
+        <feComposite in="wob" in2="halo" operator="in" result="core"/>
+        <feMerge><feMergeNode in="halo"/><feMergeNode in="core"/></feMerge>
+      </filter>`;
+
+    // Long grain running along each piece's local y axis (rails are drawn in
+    // a rotated space, so this one filter serves posts and diagonal rails).
+    // Banding fractal noise gives growth-ring lines; a fine stretched noise
+    // adds pores; sparse noise peaks become soft knots.
+    const grain = (id, seed) => `
+      <filter id="${id}" x="0" y="0" width="1" height="1" color-interpolation-filters="sRGB">
+        <feTurbulence type="fractalNoise" baseFrequency="${0.07 * grainScale} ${0.0026 * grainScale}" numOctaves="3" seed="${seed}" result="n0"/>
+        <feColorMatrix in="n0" type="matrix" values="1 0 0 0 0  1 0 0 0 0  1 0 0 0 0  0 0 0 0 1" result="n"/>
+        <feComponentTransfer in="n" result="rings">
+          <feFuncR type="table" tableValues="0 .85 .15 1 .05 .7 .2 .95 0 .8 .1 1 0"/>
+        </feComponentTransfer>
+        <feTurbulence type="fractalNoise" baseFrequency="${0.6 * grainScale} ${0.014 * grainScale}" numOctaves="1" seed="${seed + 3}" result="p0"/>
+        <feColorMatrix in="p0" type="matrix" values="1 0 0 0 0  1 0 0 0 0  1 0 0 0 0  0 0 0 0 1" result="pores"/>
+        <feComposite in="rings" in2="pores" operator="arithmetic" k2="0.7" k3="0.45" k4="-0.08" result="v"/>
+        <feColorMatrix in="v" type="matrix" values="0 0 0 0 .72  0 0 0 0 .45  0 0 0 0 .31  2.6 0 0 0 -1.72" result="light"/>
+        <feColorMatrix in="v" type="matrix" values="0 0 0 0 .07  0 0 0 0 .02  0 0 0 0 .01  -3.2 0 0 0 1.25" result="dark"/>
+        <feTurbulence type="fractalNoise" baseFrequency="${0.05 * grainScale} ${0.012 * grainScale}" numOctaves="2" seed="${seed + 7}" result="k0"/>
+        <feColorMatrix in="k0" type="matrix" values="0 0 0 0 .06  0 0 0 0 .015  0 0 0 0 0  ${9 * tone} 0 0 0 ${-6.6 * tone}" result="knot"/>
+        <feGaussianBlur in="knot" stdDeviation="1.2" result="knotSoft"/>
+        <feMerge><feMergeNode in="dark"/><feMergeNode in="light"/><feMergeNode in="knotSoft"/></feMerge>
+      </filter>`;
+
+    // Broad warm/cool colour drift across the whole piece.
+    const toneFilter = (id, seed) => `
+      <filter id="${id}" x="0" y="0" width="1" height="1" color-interpolation-filters="sRGB">
+        <feTurbulence type="fractalNoise" baseFrequency="0.006" numOctaves="2" seed="${seed}" result="t"/>
+        <feColorMatrix in="t" type="matrix" values="0 0 0 0 .62  0 0 0 0 .27  0 0 0 0 .1  ${1.6 * tone} 0 0 0 ${-0.72 * tone}" result="warm"/>
+        <feColorMatrix in="t" type="matrix" values="0 0 0 0 .13  0 0 0 0 .13  0 0 0 0 .17  ${-1.6 * tone} 0 0 0 ${0.88 * tone}" result="cool"/>
+        <feMerge><feMergeNode in="warm"/><feMergeNode in="cool"/></feMerge>
+      </filter>`;
+
+    // Mulberry paper. Shared building blocks (same seeds => the lit layer's
+    // torn edge, density and fibres line up exactly with the unlit sheet).
+    // Fibres: noise stretched hard along one axis and thresholded gives thin
+    // streaks; a broad displacement field then bends them into long wisps
+    // at varied angles. Two crossed sets: f1 sparse/bold, f2 fine.
+    const fibers = (seed) => `
+        <feTurbulence type="fractalNoise" baseFrequency="0.2 ${0.009 * fiberScale}" numOctaves="2" seed="${seed}" result="s1"/>
+        <feColorMatrix in="s1" type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  7 0 0 0 -4.75" result="l1"/>
+        <feTurbulence type="fractalNoise" baseFrequency="0.011" numOctaves="2" seed="${seed + 1}" result="w1"/>
+        <feDisplacementMap in="l1" in2="w1" scale="150" xChannelSelector="R" yChannelSelector="G" result="d1"/>
+        <feGaussianBlur in="d1" stdDeviation="0.45" result="f1"/>
+        <feTurbulence type="fractalNoise" baseFrequency="${0.012 * fiberScale} 0.22" numOctaves="2" seed="${seed + 2}" result="s2"/>
+        <feColorMatrix in="s2" type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  7 0 0 0 -4.6" result="l2"/>
+        <feTurbulence type="fractalNoise" baseFrequency="0.013" numOctaves="2" seed="${seed + 3}" result="w2"/>
+        <feDisplacementMap in="l2" in2="w2" scale="150" xChannelSelector="G" yChannelSelector="R" result="d2"/>
+        <feGaussianBlur in="d2" stdDeviation="0.45" result="f2"/>`;
+    const sheet = (seed) => `
+        <feTurbulence type="fractalNoise" baseFrequency="0.05" numOctaves="3" seed="${seed}" result="en"/>
+        <feDisplacementMap in="SourceGraphic" in2="en" scale="${deckle}" xChannelSelector="R" yChannelSelector="G" result="torn"/>
+        <feGaussianBlur in="torn" stdDeviation="${edge * 1.2}" result="feather"/>
+        <feTurbulence type="fractalNoise" baseFrequency="0.05 0.035" numOctaves="3" seed="${seed + 1}" result="cl"/>`;
+
+    const paper = (id, seed) => `
+      <filter id="${id}" x="-4%" y="-4%" width="108%" height="108%" color-interpolation-filters="sRGB">
+        ${sheet(seed)}
+        <feColorMatrix in="cl" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  ${0.9 * thickness} 0 0 0 ${1 - 0.3 * thickness}" result="dens"/>
+        <feComposite in="feather" in2="dens" operator="in" result="sheetA"/>
+        ${fibers(seed + 2)}
+        <feColorMatrix in="f1" type="matrix" values="0 0 0 0 1  0 0 0 0 .96  0 0 0 0 .89  0 0 0 ${1.0 * fiberOpacity} 0" result="f1c"/>
+        <feColorMatrix in="f2" type="matrix" values="0 0 0 0 1  0 0 0 0 .93  0 0 0 0 .84  0 0 0 ${0.75 * fiberOpacity} 0" result="f2c"/>
+        <feMerge result="fib"><feMergeNode in="f2c"/><feMergeNode in="f1c"/></feMerge>
+        <feComposite in="fib" in2="feather" operator="in" result="fibIn"/>
+        <feMerge><feMergeNode in="sheetA"/><feMergeNode in="fibIn"/></feMerge>
+      </filter>`;
+
+    // Lit: thin patches pass more light, thick fibre bundles show as darker
+    // threads, fine wisps catch the glow as lighter threads.
+    const paperLit = (id, seed) => `
+      <filter id="${id}" x="-4%" y="-4%" width="108%" height="108%" color-interpolation-filters="sRGB">
+        ${sheet(seed)}
+        <feColorMatrix in="cl" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  ${-3.2 * thickness} 0 0 0 ${0.55 + 1.6 * thickness}" result="thin"/>
+        <feComposite in="feather" in2="thin" operator="in" result="glow"/>
+        ${fibers(seed + 2)}
+        <feColorMatrix in="f1" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 ${-1.7 * fiberOpacity} 1" result="hole"/>
+        <feComposite in="glow" in2="hole" operator="in" result="glowF"/>
+        <feColorMatrix in="f2" type="matrix" values="0 0 0 0 1  0 0 0 0 .93  0 0 0 0 .78  0 0 0 ${0.8 * fiberOpacity} 0" result="wisp"/>
+        <feComposite in="wisp" in2="glow" operator="in" result="wispIn"/>
+        <feMerge><feMergeNode in="glowF"/><feMergeNode in="wispIn"/></feMerge>
+      </filter>`;
+
+    // Fibre bundles silhouetted against the light (multiplied over the glow).
+    const fiberLit = (id, seed) => `
+      <filter id="${id}" x="-4%" y="-4%" width="108%" height="108%" color-interpolation-filters="sRGB">
+        ${sheet(seed)}
+        ${fibers(seed + 2)}
+        <feColorMatrix in="f1" type="matrix" values="0 0 0 0 .62  0 0 0 0 .4  0 0 0 0 .24  0 0 0 ${0.7 * fiberOpacity} 0" result="f1c"/>
+        <feColorMatrix in="f2" type="matrix" values="0 0 0 0 .78  0 0 0 0 .56  0 0 0 0 .36  0 0 0 ${0.5 * fiberOpacity} 0" result="f2c"/>
+        <feMerge result="fib"><feMergeNode in="f2c"/><feMergeNode in="f1c"/></feMerge>
+        <feComposite in="fib" in2="feather" operator="in"/>
+      </filter>`;
+
+    const blur = (id, sd) => `
+      <filter id="${id}" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="${sd}"/></filter>`;
+
+    // Replaces Figma's single hard drop shadow: tight contact + wide ambient.
+    const layeredShadow = `
+      <filter id="fx-shadow-layered" x="-150%" y="-5%" width="400%" height="115%" color-interpolation-filters="sRGB">
+        <feGaussianBlur in="SourceAlpha" stdDeviation="0.9" result="c"/>
+        <feOffset in="c" dy="1" result="c1"/>
+        <feFlood flood-color="#000" flood-opacity="${0.55 * contact}"/>
+        <feComposite in2="c1" operator="in" result="cs"/>
+        <feGaussianBlur in="SourceAlpha" stdDeviation="6" result="a"/>
+        <feOffset in="a" dx="2" dy="6" result="a1"/>
+        <feFlood flood-color="#000" flood-opacity="${0.5 * ambient}"/>
+        <feComposite in2="a1" operator="in" result="as"/>
+        <feMerge><feMergeNode in="as"/><feMergeNode in="cs"/><feMergeNode in="SourceGraphic"/></feMerge>
+      </filter>`;
+
+    document.getElementById('fx-defs').innerHTML =
+      woodEdge + layeredShadow +
+      grain('fx-grain-v', 11) + grain('fx-grain-r', 23) + grain('fx-grain-f', 37) +
+      grain('fx-grain-pa', 51) + grain('fx-grain-pb', 67) +
+      toneFilter('fx-tone', 5) + toneFilter('fx-tone-pa', 41) + toneFilter('fx-tone-pb', 83) +
+      paper('fx-paper-l', 101) + paper('fx-paper-r', 131) + paper('fx-paper-t', 161) +
+      paperLit('fx-paperlit-l', 101) + paperLit('fx-paperlit-r', 131) + paperLit('fx-paperlit-t', 161) +
+      fiberLit('fx-fiberlit-l', 101) + fiberLit('fx-fiberlit-r', 131) + fiberLit('fx-fiberlit-t', 161) +
+      blur('fx-blur-tight', 3 * Math.max(edge, 0.6)) + blur('fx-blur-wide', 26);
+  }
+  buildLampFx();
+  </script>
+
   <div class="stage">
     <div class="toggle-row">
       <span class="toggle-label">Turn the lights on</span>
       <button class="light-toggle" id="lightToggle" type="button" aria-pressed="false">
-        <span class="knob"><img src="assets/toggle-knob.svg" alt=""></span>
+        <span class="knob"></span>
         <span class="toggle-text">Off</span>
       </button>
     </div>
 
     <div class="lamp" aria-label="Lamp shade preview">
+      <svg class="floor" viewBox="0 0 718.44 744.424" preserveAspectRatio="none" overflow="visible" aria-hidden="true">
+        <polygon class="shadow-ambient" points="0,662 352,812 718,662 362,512" fill="#08050a" filter="url(#fx-blur-wide)"/>
+        <g class="shadow-contact" fill="#040205" filter="url(#fx-blur-tight)">
+          <ellipse cx="16" cy="652" rx="19" ry="5"/>
+          <ellipse cx="16" cy="632" rx="17" ry="4"/>
+          <ellipse cx="703" cy="652" rx="19" ry="5"/>
+          <ellipse cx="703" cy="632" rx="17" ry="4"/>
+          <ellipse cx="303" cy="793" rx="19" ry="5"/>
+          <ellipse cx="403" cy="793" rx="19" ry="5"/>
+          <ellipse cx="318" cy="523" rx="16" ry="4"/>
+          <ellipse cx="403" cy="523" rx="16" ry="4"/>
+        </g>
+      </svg>
+      <i class="fx floor-glow" aria-hidden="true"></i>
       <img class="glow-ambient" src="assets/ambient-glow.svg" alt="">
-      <img class="frame" src="assets/lamp-frame.svg" alt="">
-      <img class="top" src="assets/lamp-top.svg" alt="">
+      <svg class="frame" viewBox="0 0 718.44 744.424" preserveAspectRatio="none" overflow="visible" aria-hidden="true">
+      <defs><clipPath id="fr-c0"><path d="M418.44 5.56982L400.12 14.5598L401.05 526.55L418.34 518.49L418.43 5.56982H418.44Z"/></clipPath><clipPath id="fr-c1"><path d="M388.1 8.52979L400.13 14.4798L401.06 526.55L388.1 520.54L388.1 8.52979Z"/></clipPath><clipPath id="fr-c2"><path d="M406.4 0L388 8.49L400.12 14.32L418.44 5.57L406.4 0Z"/></clipPath><clipPath id="fr-c3"><path d="M303 5.56982L321.32 14.5598L320.39 526.55L303.1 518.49L303.01 5.56982H303Z"/></clipPath><clipPath id="fr-c4"><path d="M333.34 8.52979L321.31 14.4798L320.38 526.55L333.34 520.54L333.34 8.52979Z"/></clipPath><clipPath id="fr-c5"><path d="M315.04 0L333.44 8.49L321.32 14.32L303 5.57L315.04 0Z"/></clipPath><clipPath id="fr-c6"><path d="M400.079 50.6537L400.036 61.5472L19.0822 238.164L18.9953 227.149L400.079 50.6537Z"/></clipPath><clipPath id="fr-c7"><path d="M400.08 50.6541L388.717 45.3984L30.4016 211.452V222.18L400.08 50.6541Z"/></clipPath><clipPath id="fr-c8"><path d="M18.9953 196.336L19.1082 185.407L400.948 362.432L400.783 373.3L18.9953 196.336Z"/></clipPath><clipPath id="fr-c9"><path d="M18.5436 185.155L29.8976 182.054L388.604 348.159L388.977 357.003L18.5436 185.155Z"/></clipPath><clipPath id="fr-c10"><path d="M709 187.5V191.5L329.8 369.5L329.8 357.818L709 182V187.5Z"/></clipPath><clipPath id="fr-c11"><path d="M709 182L694.1 177.5L329.8 347.5L329.8 358.68L709 182Z"/></clipPath><clipPath id="fr-c12"><path d="M665.417 197.222H651.518V578.584H665.417V197.222Z"/></clipPath><clipPath id="fr-c13"><path d="M71.6734 207.854H57.7741V579.087H71.6734V207.854Z"/></clipPath><clipPath id="fr-c14"><path d="M700.748 552.975L706.559 565.449L326.935 742.761L321.114 730.286L700.739 552.975H700.748Z"/></clipPath><clipPath id="fr-c15"><path d="M230.605 487.958L7.6325 591.932L13.9362 605.45L236.909 501.477L230.605 487.958Z"/></clipPath><clipPath id="fr-c16"><path d="M24.0002 570.475L29.8205 558L402.852 731.95L397.031 744.424L24.0002 570.475Z"/></clipPath><clipPath id="fr-c17"><path d="M321.3 60.7143L321.3 49L708.548 230.693V241.752L321.3 60.7143Z"/></clipPath><clipPath id="fr-c18"><path d="M522.529 503.579L516.332 516.869L703.721 604.25L709.918 590.96L522.529 503.579Z"/></clipPath><clipPath id="fr-c19"><path d="M30.4403 113.57L12.1203 122.56L13.0503 634.55L30.3403 626.49L30.4303 113.57H30.4403Z"/></clipPath><clipPath id="fr-c20"><path d="M0.100273 116.53L12.1303 122.48L13.0603 634.55L0.100273 628.54L0.100273 116.53Z"/></clipPath><clipPath id="fr-c21"><path d="M18.4002 108L0.000175476 116.49L12.1202 122.32L30.4402 113.57L18.4002 108Z"/></clipPath><clipPath id="fr-c22"><path d="M698.194 225.759V214.813L333.35 44.5L321.2 49L698.202 225.759H698.194Z"/></clipPath><clipPath id="fr-c23"><path d="M368 338H354V719.506L361 724L368 719.506V338Z"/></clipPath><clipPath id="fr-c24"><path d="M688 113.57L706.32 122.56L705.39 634.55L688.1 626.49L688.01 113.57H688Z"/></clipPath><clipPath id="fr-c25"><path d="M718.34 116.53L706.31 122.48L705.38 634.55L718.34 628.54L718.34 116.53Z"/></clipPath><clipPath id="fr-c26"><path d="M700.04 108L718.44 116.49L706.32 122.32L688 113.57L700.04 108Z"/></clipPath><clipPath id="fr-c27"><path d="M718.44 145.57L700.12 154.56L701.05 654.55L718.34 646.49L718.43 145.57H718.44Z"/></clipPath><clipPath id="fr-c28"><path d="M688.1 148.53L700.13 154.48L701.06 654.55L688.1 648.54L688.1 148.53Z"/></clipPath><clipPath id="fr-c29"><path d="M706.4 140L688 148.49L700.12 154.32L718.44 145.57L706.4 140Z"/></clipPath><clipPath id="fr-c30"><path d="M0 145.57L18.32 154.56L17.39 654.55L0.0999985 646.49L0.00999832 145.57H0Z"/></clipPath><clipPath id="fr-c31"><path d="M30.34 148.53L18.31 154.48L17.38 654.55L30.34 648.54L30.34 148.53Z"/></clipPath><clipPath id="fr-c32"><path d="M12.0401 140L30.4401 148.49L18.3201 154.32L0.000116348 145.57L12.0401 140Z"/></clipPath><clipPath id="fr-call"><path d="M418.44 5.56982L400.12 14.5598L401.05 526.55L418.34 518.49L418.43 5.56982H418.44Z"/><path d="M388.1 8.52979L400.13 14.4798L401.06 526.55L388.1 520.54L388.1 8.52979Z"/><path d="M406.4 0L388 8.49L400.12 14.32L418.44 5.57L406.4 0Z"/><path d="M303 5.56982L321.32 14.5598L320.39 526.55L303.1 518.49L303.01 5.56982H303Z"/><path d="M333.34 8.52979L321.31 14.4798L320.38 526.55L333.34 520.54L333.34 8.52979Z"/><path d="M315.04 0L333.44 8.49L321.32 14.32L303 5.57L315.04 0Z"/><path d="M400.079 50.6537L400.036 61.5472L19.0822 238.164L18.9953 227.149L400.079 50.6537Z"/><path d="M400.08 50.6541L388.717 45.3984L30.4016 211.452V222.18L400.08 50.6541Z"/><path d="M18.9953 196.336L19.1082 185.407L400.948 362.432L400.783 373.3L18.9953 196.336Z"/><path d="M18.5436 185.155L29.8976 182.054L388.604 348.159L388.977 357.003L18.5436 185.155Z"/><path d="M709 187.5V191.5L329.8 369.5L329.8 357.818L709 182V187.5Z"/><path d="M709 182L694.1 177.5L329.8 347.5L329.8 358.68L709 182Z"/><path d="M665.417 197.222H651.518V578.584H665.417V197.222Z"/><path d="M71.6734 207.854H57.7741V579.087H71.6734V207.854Z"/><path d="M700.748 552.975L706.559 565.449L326.935 742.761L321.114 730.286L700.739 552.975H700.748Z"/><path d="M230.605 487.958L7.6325 591.932L13.9362 605.45L236.909 501.477L230.605 487.958Z"/><path d="M24.0002 570.475L29.8205 558L402.852 731.95L397.031 744.424L24.0002 570.475Z"/><path d="M321.3 60.7143L321.3 49L708.548 230.693V241.752L321.3 60.7143Z"/><path d="M522.529 503.579L516.332 516.869L703.721 604.25L709.918 590.96L522.529 503.579Z"/><path d="M30.4403 113.57L12.1203 122.56L13.0503 634.55L30.3403 626.49L30.4303 113.57H30.4403Z"/><path d="M0.100273 116.53L12.1303 122.48L13.0603 634.55L0.100273 628.54L0.100273 116.53Z"/><path d="M18.4002 108L0.000175476 116.49L12.1202 122.32L30.4402 113.57L18.4002 108Z"/><path d="M698.194 225.759V214.813L333.35 44.5L321.2 49L698.202 225.759H698.194Z"/><path d="M368 338H354V719.506L361 724L368 719.506V338Z"/><path d="M688 113.57L706.32 122.56L705.39 634.55L688.1 626.49L688.01 113.57H688Z"/><path d="M718.34 116.53L706.31 122.48L705.38 634.55L718.34 628.54L718.34 116.53Z"/><path d="M700.04 108L718.44 116.49L706.32 122.32L688 113.57L700.04 108Z"/><path d="M718.44 145.57L700.12 154.56L701.05 654.55L718.34 646.49L718.43 145.57H718.44Z"/><path d="M688.1 148.53L700.13 154.48L701.06 654.55L688.1 648.54L688.1 148.53Z"/><path d="M706.4 140L688 148.49L700.12 154.32L718.44 145.57L706.4 140Z"/><path d="M0 145.57L18.32 154.56L17.39 654.55L0.0999985 646.49L0.00999832 145.57H0Z"/><path d="M30.34 148.53L18.31 154.48L17.38 654.55L30.34 648.54L30.34 148.53Z"/><path d="M12.0401 140L30.4401 148.49L18.3201 154.32L0.000116348 145.57L12.0401 140Z"/></clipPath>
+      <linearGradient id="fr-paint0_linear_0_13" x1="434.94" y1="181.554" x2="384.656" y2="273.726" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#2D0000"/>
+      <stop offset="1" stop-color="#666666" stop-opacity="0.2"/>
+      </linearGradient>
+      <linearGradient id="fr-paint1_linear_0_13" x1="412.732" y1="183.514" x2="355.307" y2="258.406" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#2D0000"/>
+      <stop offset="1" stop-color="#666666" stop-opacity="0.2"/>
+      </linearGradient>
+      <linearGradient id="fr-paint2_linear_0_13" x1="286.501" y1="181.554" x2="336.784" y2="273.726" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#2D0000"/>
+      <stop offset="1" stop-color="#666666" stop-opacity="0.2"/>
+      </linearGradient>
+      <linearGradient id="fr-paint3_linear_0_13" x1="308.708" y1="183.514" x2="366.133" y2="258.406" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#2D0000"/>
+      <stop offset="1" stop-color="#666666" stop-opacity="0.2"/>
+      </linearGradient>
+      <linearGradient id="fr-paint4_linear_0_13" x1="10.7843" y1="598.691" x2="233.757" y2="494.718" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#3B1005"/>
+      <stop offset="0.711538" stop-color="#561D0F" stop-opacity="0"/>
+      </linearGradient>
+      <linearGradient id="fr-paint5_linear_0_13" x1="689.5" y1="590" x2="523" y2="511.5" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#3B1005"/>
+      <stop offset="0.793269" stop-color="#491A0B" stop-opacity="0"/>
+      </linearGradient>
+      <linearGradient id="fr-paint6_linear_0_13" x1="24.7323" y1="291.514" x2="-32.6929" y2="366.406" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#2D0000"/>
+      <stop offset="1" stop-color="#666666" stop-opacity="0.2"/>
+      </linearGradient>
+      <linearGradient id="fr-paint7_linear_0_13" x1="671.501" y1="289.554" x2="721.784" y2="381.726" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#2D0000"/>
+      <stop offset="1" stop-color="#666666" stop-opacity="0.2"/>
+      </linearGradient>
+      <linearGradient id="fr-paint8_linear_0_13" x1="734.94" y1="317.5" x2="686.44" y2="408.5" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#2D0000"/>
+      <stop offset="1" stop-color="#666666" stop-opacity="0.2"/>
+      </linearGradient>
+      <linearGradient id="fr-paint9_linear_0_13" x1="-16.4993" y1="317.5" x2="32.0007" y2="408.5" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#2D0000"/>
+      <stop offset="1" stop-color="#666666" stop-opacity="0.2"/>
+      </linearGradient>
+      <linearGradient id="fr-paint10_linear_0_13" x1="5.708" y1="319.46" x2="61.4486" y2="393.879" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#2D0000"/>
+      <stop offset="1" stop-color="#666666" stop-opacity="0.2"/>
+      </linearGradient>
+      </defs>
+      <g filter="url(#fx-wood-edge)">
+      <g><g><g><path d="M418.44 5.56982L400.12 14.5598L401.05 526.55L418.34 518.49L418.43 5.56982H418.44Z" fill="#360E04"/>
+      <path d="M418.44 5.56982L400.12 14.5598L401.05 526.55L418.34 518.49L418.43 5.56982H418.44Z" fill="url(#fr-paint0_linear_0_13)" fill-opacity="0.3"/>
+      </g>
+      <g><path d="M388.1 8.52979L400.13 14.4798L401.06 526.55L388.1 520.54L388.1 8.52979Z" fill="#360E04"/>
+      <path d="M388.1 8.52979L400.13 14.4798L401.06 526.55L388.1 520.54L388.1 8.52979Z" fill="url(#fr-paint1_linear_0_13)" fill-opacity="0.6"/>
+      </g>
+      <path d="M406.4 0L388 8.49L400.12 14.32L418.44 5.57L406.4 0Z" fill="#97736C"/>
+      </g>
+      <g><g><path d="M303 5.56982L321.32 14.5598L320.39 526.55L303.1 518.49L303.01 5.56982H303Z" fill="#360E04"/>
+      <path d="M303 5.56982L321.32 14.5598L320.39 526.55L303.1 518.49L303.01 5.56982H303Z" fill="url(#fr-paint2_linear_0_13)" fill-opacity="0.2"/>
+      </g>
+      <g><path d="M333.34 8.52979L321.31 14.4798L320.38 526.55L333.34 520.54L333.34 8.52979Z" fill="#360E04"/>
+      <path d="M333.34 8.52979L321.31 14.4798L320.38 526.55L333.34 520.54L333.34 8.52979Z" fill="url(#fr-paint3_linear_0_13)" fill-opacity="0.5"/>
+      </g>
+      <path d="M315.04 0L333.44 8.49L321.32 14.32L303 5.57L315.04 0Z" fill="#97736C"/>
+      </g>
+      <path d="M400.079 50.6537L400.036 61.5472L19.0822 238.164L18.9953 227.149L400.079 50.6537Z" fill="#491A0B"/>
+      <path d="M400.08 50.6541L388.717 45.3984L30.4016 211.452V222.18L400.08 50.6541Z" fill="#86574B"/>
+      <path d="M18.9953 196.336L19.1082 185.407L400.948 362.432L400.783 373.3L18.9953 196.336Z" fill="#3B1005"/>
+      <path d="M18.5436 185.155L29.8976 182.054L388.604 348.159L388.977 357.003L18.5436 185.155Z" fill="#86574B"/>
+      <path d="M709 187.5V191.5L329.8 369.5L329.8 357.818L709 182V187.5Z" fill="#3B1005"/>
+      <path d="M709 182L694.1 177.5L329.8 347.5L329.8 358.68L709 182Z" fill="#86574B"/>
+      <g><path d="M665.417 197.222H651.518V578.584H665.417V197.222Z" fill="#491A0B"/>
+      <path d="M71.6734 207.854H57.7741V579.087H71.6734V207.854Z" fill="#561D0F"/>
+      <path transform="translate(0 -2.9)" d="M700.748 552.975L706.559 565.449L326.935 742.761L321.114 730.286L700.739 552.975H700.748Z" fill="#441205"/>
+      <path d="M230.605 487.958L7.6325 591.932L13.9362 605.45L236.909 501.477L230.605 487.958Z" fill="url(#fr-paint4_linear_0_13)"/>
+      <path transform="translate(0 -0.55)" d="M24.0002 570.475L29.8205 558L402.852 731.95L397.031 744.424L24.0002 570.475Z" fill="#441205"/>
+      <path d="M321.3 60.7143L321.3 49L708.548 230.693V241.752L321.3 60.7143Z" fill="#491A0B"/>
+      <path d="M522.529 503.579L516.332 516.869L703.721 604.25L709.918 590.96L522.529 503.579Z" fill="url(#fr-paint5_linear_0_13)"/>
+      </g>
+      <g><path d="M30.4403 113.57L12.1203 122.56L13.0503 634.55L30.3403 626.49L30.4303 113.57H30.4403Z" fill="#360E04"/>
+      <g><path d="M0.100273 116.53L12.1303 122.48L13.0603 634.55L0.100273 628.54L0.100273 116.53Z" fill="#360E04"/>
+      <path d="M0.100273 116.53L12.1303 122.48L13.0603 634.55L0.100273 628.54L0.100273 116.53Z" fill="url(#fr-paint6_linear_0_13)" fill-opacity="0.6"/>
+      </g>
+      <path d="M18.4002 108L0.000175476 116.49L12.1202 122.32L30.4402 113.57L18.4002 108Z" fill="#97736C"/>
+      </g>
+      <path d="M698.194 225.759V214.813L333.35 44.5L321.2 49L698.202 225.759H698.194Z" fill="#86574B"/>
+      <g filter="url(#fx-shadow-layered)">
+      <path d="M368 338H354V719.506L361 724L368 719.506V338Z" fill="#441205"/>
+      </g>
+      <g><g><path d="M688 113.57L706.32 122.56L705.39 634.55L688.1 626.49L688.01 113.57H688Z" fill="#360E04"/>
+      <path d="M688 113.57L706.32 122.56L705.39 634.55L688.1 626.49L688.01 113.57H688Z" fill="url(#fr-paint7_linear_0_13)" fill-opacity="0.4"/>
+      </g>
+      <path d="M718.34 116.53L706.31 122.48L705.38 634.55L718.34 628.54L718.34 116.53Z" fill="#360E04"/>
+      <path d="M700.04 108L718.44 116.49L706.32 122.32L688 113.57L700.04 108Z" fill="#97736C"/>
+      </g>
+      <g><g><path d="M718.44 145.57L700.12 154.56L701.05 654.55L718.34 646.49L718.43 145.57H718.44Z" fill="#491A0B"/>
+      <path d="M718.44 145.57L700.12 154.56L701.05 654.55L718.34 646.49L718.43 145.57H718.44Z" fill="url(#fr-paint8_linear_0_13)" fill-opacity="0.2"/>
+      </g>
+      <path d="M688.1 148.53L700.13 154.48L701.06 654.55L688.1 648.54L688.1 148.53Z" fill="#491A0B"/>
+      <path d="M706.4 140L688 148.49L700.12 154.32L718.44 145.57L706.4 140Z" fill="#97736C"/>
+      </g>
+      <g><g><path d="M0 145.57L18.32 154.56L17.39 654.55L0.0999985 646.49L0.00999832 145.57H0Z" fill="#491A0B"/>
+      <path d="M0 145.57L18.32 154.56L17.39 654.55L0.0999985 646.49L0.00999832 145.57H0Z" fill="url(#fr-paint9_linear_0_13)" fill-opacity="0.2"/>
+      </g>
+      <g><path d="M30.34 148.53L18.31 154.48L17.38 654.55L30.34 648.54L30.34 148.53Z" fill="#491A0B"/>
+      <path d="M30.34 148.53L18.31 154.48L17.38 654.55L30.34 648.54L30.34 148.53Z" fill="url(#fr-paint10_linear_0_13)" fill-opacity="0.2"/>
+      </g>
+      <path d="M12.0401 140L30.4401 148.49L18.3201 154.32L0.000116348 145.57L12.0401 140Z" fill="#97736C"/>
+      </g>
+      </g>
+      <g class="wood-grain"><g clip-path="url(#fr-c0)"><rect x="397.1" y="2.6" width="24.3" height="527" filter="url(#fx-grain-v)"/></g><g clip-path="url(#fr-c1)"><rect x="385.1" y="5.5" width="19" height="524" filter="url(#fx-grain-v)"/></g><g clip-path="url(#fr-c3)"><rect x="300" y="2.6" width="24.3" height="527" filter="url(#fx-grain-v)"/></g><g clip-path="url(#fr-c4)"><rect x="317.4" y="5.5" width="19" height="524" filter="url(#fx-grain-v)"/></g><g clip-path="url(#fr-c6)"><g transform="rotate(65 359.2 372.2)"><rect x="81" y="196.3" width="16.9" height="430.5" filter="url(#fx-grain-r)"/></g></g><g clip-path="url(#fr-c7)"><g transform="rotate(65 359.2 372.2)"><rect x="71.6" y="196.3" width="16.5" height="413.5" filter="url(#fx-grain-r)"/></g></g><g clip-path="url(#fr-c8)"><g transform="rotate(-65 359.2 372.2)"><rect x="371.8" y="-18" width="16.9" height="431.3" filter="url(#fx-grain-f)"/></g></g><g clip-path="url(#fr-c9)"><g transform="rotate(-65 359.2 372.2)"><rect x="381.8" y="-18.6" width="14.7" height="414.4" filter="url(#fx-grain-f)"/></g></g><g clip-path="url(#fr-c10)"><g transform="rotate(65 359.2 372.2)"><rect x="330.7" y="-28.2" width="16.6" height="428.9" filter="url(#fx-grain-r)"/></g></g><g clip-path="url(#fr-c11)"><g transform="rotate(65 359.2 372.2)"><rect x="321.3" y="-28.2" width="16.4" height="424.3" filter="url(#fx-grain-r)"/></g></g><g clip-path="url(#fr-c12)"><rect x="648.5" y="194.2" width="19.9" height="387.4" filter="url(#fx-grain-v)"/></g><g clip-path="url(#fr-c13)"><rect x="54.8" y="204.9" width="19.9" height="377.2" filter="url(#fx-grain-v)"/></g><g transform="translate(0 -2.9)" clip-path="url(#fr-c14)"><g transform="rotate(65 359.2 372.2)"><rect x="664.4" y="136.1" width="20" height="425" filter="url(#fx-grain-r)"/></g></g><g clip-path="url(#fr-c15)"><g transform="rotate(65 359.2 372.2)"><rect x="406.8" y="534.7" width="20.9" height="252" filter="url(#fx-grain-r)"/></g></g><g transform="translate(0 -0.55)" clip-path="url(#fr-c16)"><g transform="rotate(-65 359.2 372.2)"><rect x="34.8" y="149.2" width="19.8" height="417.6" filter="url(#fx-grain-f)"/></g></g><g clip-path="url(#fr-c17)"><g transform="rotate(-65 359.2 372.2)"><rect x="622.1" y="198.3" width="17" height="438.4" filter="url(#fx-grain-f)"/></g></g><g clip-path="url(#fr-c18)"><g transform="rotate(-65 359.2 372.2)"><rect x="291.5" y="572.7" width="20.7" height="212.8" filter="url(#fx-grain-f)"/></g></g><g clip-path="url(#fr-c19)"><rect x="9.1" y="110.6" width="24.3" height="527" filter="url(#fx-grain-v)"/></g><g clip-path="url(#fr-c20)"><rect x="-2.9" y="113.5" width="19" height="524" filter="url(#fx-grain-v)"/></g><g clip-path="url(#fr-c22)"><g transform="rotate(-65 359.2 372.2)"><rect x="632.2" y="198.2" width="16.1" height="422.4" filter="url(#fx-grain-f)"/></g></g><g clip-path="url(#fr-c23)"><rect x="351" y="335" width="20" height="392" filter="url(#fx-grain-v)"/></g><g clip-path="url(#fr-c24)"><rect x="685" y="110.6" width="24.3" height="527" filter="url(#fx-grain-v)"/></g><g clip-path="url(#fr-c25)"><rect x="702.4" y="113.5" width="19" height="524" filter="url(#fx-grain-v)"/></g><g clip-path="url(#fr-c27)"><rect x="697.1" y="142.6" width="24.3" height="515" filter="url(#fx-grain-v)"/></g><g clip-path="url(#fr-c28)"><rect x="685.1" y="145.5" width="19" height="512" filter="url(#fx-grain-v)"/></g><g clip-path="url(#fr-c30)"><rect x="-3" y="142.6" width="24.3" height="515" filter="url(#fx-grain-v)"/></g><g clip-path="url(#fr-c31)"><rect x="14.4" y="145.5" width="19" height="512" filter="url(#fx-grain-v)"/></g></g><rect class="wood-tone" clip-path="url(#fr-call)" x="0" y="0" width="718.44" height="744.424" filter="url(#fx-tone)"/>
+      </g>
+      </svg>
+      <i class="fx wood-tint" aria-hidden="true"></i>
+      <i class="fx wood-sheen" aria-hidden="true"><i class="sheen-spot"></i></i>
+      <i class="fx wood-glow" aria-hidden="true"></i>
+      <svg class="top" viewBox="0 0 550.317 255.695" preserveAspectRatio="none" overflow="visible" aria-hidden="true">
+        <defs>
+          <linearGradient id="top-g0" x1="185.825" y1="49.0819" x2="299.625" y2="182.428" gradientUnits="userSpaceOnUse">
+            <stop stop-color="#FF7741" stop-opacity="0.8"/>
+            <stop offset="1" stop-color="#FF7741" stop-opacity="0"/>
+          </linearGradient>
+          <linearGradient id="top-g1" x1="398.658" y1="59.9407" x2="170.622" y2="200.671" gradientUnits="userSpaceOnUse">
+            <stop stop-color="#FF7741" stop-opacity="0.8"/>
+            <stop offset="0.649038" stop-color="#FF7741" stop-opacity="0"/>
+          </linearGradient>
+        </defs>
+        <g filter="url(#fx-paper-t)">
+          <path d="M0 127.813L276.309 0L550.317 128.073L276.309 255.695L0 127.813Z" fill="#FCE6CD" fill-opacity="0.65"/>
+          <path d="M0 127.813L276.309 0L550.317 128.073L276.309 255.695L0 127.813Z" fill="url(#top-g0)" fill-opacity="0.2"/>
+          <path d="M0 127.813L276.309 0L550.317 128.073L276.309 255.695L0 127.813Z" fill="url(#top-g1)" fill-opacity="0.2"/>
+        </g>
+      </svg>
+      <svg class="top-lit" viewBox="0 0 550.317 255.695" preserveAspectRatio="none" overflow="visible" aria-hidden="true">
+        <defs>
+          <radialGradient id="top-glow" cx="0.5" cy="0.52" r="0.62">
+            <stop offset="0" stop-color="#FFF1D2" stop-opacity="0.9"/>
+            <stop offset="0.4" stop-color="#FFD69C" stop-opacity="0.55"/>
+            <stop offset="0.8" stop-color="#F3A262" stop-opacity="0.18"/>
+            <stop offset="1" stop-color="#E07B3C" stop-opacity="0.05"/>
+          </radialGradient>
+        </defs>
+        <path d="M0 127.813L276.309 0L550.317 128.073L276.309 255.695L0 127.813Z" fill="url(#top-glow)" filter="url(#fx-paperlit-t)"/>
+      </svg>
+      <svg class="top-lit fibers-lit" viewBox="0 0 550.317 255.695" preserveAspectRatio="none" overflow="visible" aria-hidden="true">
+        <path d="M0 127.813L276.309 0L550.317 128.073L276.309 255.695L0 127.813Z" filter="url(#fx-fiberlit-t)"/>
+      </svg>
       <div class="panel-left">
-        <img class="panel-left-fill" src="assets/lamp-panel-left.svg" alt="">
+        <svg class="paper-fill" viewBox="0 0 282.764 487.779" preserveAspectRatio="none" overflow="visible" aria-hidden="true">
+          <defs>
+            <linearGradient id="pl-g0" x1="-1.05139e-06" y1="12.8134" x2="-94.1611" y2="193.672" gradientUnits="userSpaceOnUse">
+              <stop stop-color="#FF7741" stop-opacity="0.8"/>
+              <stop offset="0.649038" stop-color="#FF7741" stop-opacity="0"/>
+            </linearGradient>
+          </defs>
+          <g filter="url(#fx-paper-l)">
+            <path d="M0 0L282.764 130.74L281.895 487.779L0 356.17V0Z" fill="#FCE6CD" fill-opacity="0.65"/>
+            <path d="M0 0L282.764 130.74L281.895 487.779L0 356.17V0Z" fill="url(#pl-g0)" fill-opacity="0.2"/>
+          </g>
+        </svg>
+        <svg class="paper-lit" viewBox="0 0 282.764 487.779" preserveAspectRatio="none" overflow="visible" aria-hidden="true">
+          <defs>
+            <radialGradient id="pl-glow" cx="0.6" cy="0.6" r="0.72">
+              <stop offset="0" stop-color="#FFF1D2" stop-opacity="0.95"/>
+              <stop offset="0.38" stop-color="#FFD69C" stop-opacity="0.6"/>
+              <stop offset="0.78" stop-color="#F3A262" stop-opacity="0.2"/>
+              <stop offset="1" stop-color="#E07B3C" stop-opacity="0.06"/>
+            </radialGradient>
+          </defs>
+          <path d="M0 0L282.764 130.74L281.895 487.779L0 356.17V0Z" fill="url(#pl-glow)" filter="url(#fx-paperlit-l)"/>
+        </svg>
+        <svg class="paper-lit fibers-lit" viewBox="0 0 282.764 487.779" preserveAspectRatio="none" overflow="visible" aria-hidden="true">
+          <path d="M0 0L282.764 130.74L281.895 487.779L0 356.17V0Z" filter="url(#fx-fiberlit-l)"/>
+        </svg>
         <img class="flower" src="" alt="Custom drawing on left panel" style="display:none;">
       </div>
       <div class="panel-right">
-        <img class="panel-right-fill" src="assets/lamp-panel-right.svg" alt="">
+        <svg class="paper-fill" viewBox="0 0 283.998 487.813" preserveAspectRatio="none" overflow="visible" aria-hidden="true">
+          <defs>
+            <linearGradient id="pr-g0" x1="-8.68706" y1="143.337" x2="37.2473" y2="314.446" gradientUnits="userSpaceOnUse">
+              <stop stop-color="#FF7741" stop-opacity="0.7"/>
+              <stop offset="0.533654" stop-color="#FF7741" stop-opacity="0"/>
+            </linearGradient>
+          </defs>
+          <g filter="url(#fx-paper-r)">
+            <path d="M283.998 0L0 132.078V487.813L283.998 355.336V0Z" fill="#FCE6CD" fill-opacity="0.65"/>
+            <path d="M283.998 0L0 132.078V487.813L283.998 355.336V0Z" fill="url(#pr-g0)" fill-opacity="0.2"/>
+          </g>
+        </svg>
+        <svg class="paper-lit" viewBox="0 0 283.998 487.813" preserveAspectRatio="none" overflow="visible" aria-hidden="true">
+          <defs>
+            <radialGradient id="pr-glow" cx="0.4" cy="0.6" r="0.72">
+              <stop offset="0" stop-color="#FFF1D2" stop-opacity="0.95"/>
+              <stop offset="0.38" stop-color="#FFD69C" stop-opacity="0.6"/>
+              <stop offset="0.78" stop-color="#F3A262" stop-opacity="0.2"/>
+              <stop offset="1" stop-color="#E07B3C" stop-opacity="0.06"/>
+            </radialGradient>
+          </defs>
+          <path d="M283.998 0L0 132.078V487.813L283.998 355.336V0Z" fill="url(#pr-glow)" filter="url(#fx-paperlit-r)"/>
+        </svg>
+        <svg class="paper-lit fibers-lit" viewBox="0 0 283.998 487.813" preserveAspectRatio="none" overflow="visible" aria-hidden="true">
+          <path d="M283.998 0L0 132.078V487.813L283.998 355.336V0Z" filter="url(#fx-fiberlit-r)"/>
+        </svg>
         <img class="flower" src="assets/flower.svg" alt="Flower design on lamp shade">
       </div>
       <img class="warm-lighting" src="assets/warm-lighting.svg" alt="">
-      <img class="post-a" src="assets/lamp-post-a.svg" alt="">
-      <img class="post-b" src="assets/lamp-post-b.svg" alt="">
+      <!-- Corner rails, centre post and side posts redrawn above the paper
+           (same geometry and filters as .frame, so they sit exactly on it). -->
+      <div class="frame-front">
+        <svg class="frame-front-svg" viewBox="0 0 718.44 744.424" preserveAspectRatio="none" overflow="visible" aria-hidden="true">
+      <defs><clipPath id="ff-call"><path d="M368 338H354V719.506L361 724L368 719.506V338Z"/><path d="M18.9953 196.336L19.1082 185.407L400.948 362.432L400.783 373.3L18.9953 196.336Z"/><path d="M18.5436 185.155L29.8976 182.054L388.604 348.159L388.977 357.003L18.5436 185.155Z"/><path d="M709 187.5V191.5L329.8 369.5L329.8 357.818L709 182V187.5Z"/><path d="M709 182L694.1 177.5L329.8 347.5L329.8 358.68L709 182Z"/><path d="M700.748 552.975L706.559 565.449L326.935 742.761L321.114 730.286L700.739 552.975H700.748Z" transform="translate(0 -2.9)"/><path d="M24.0002 570.475L29.8205 558L402.852 731.95L397.031 744.424L24.0002 570.475Z" transform="translate(0 -0.55)"/><path d="M30.4403 113.57L12.1203 122.56L13.0503 634.55L30.3403 626.49L30.4303 113.57H30.4403Z"/><path d="M0.100273 116.53L12.1303 122.48L13.0603 634.55L0.100273 628.54L0.100273 116.53Z"/><path d="M18.4002 108L0.000175476 116.49L12.1202 122.32L30.4402 113.57L18.4002 108Z"/><path d="M688 113.57L706.32 122.56L705.39 634.55L688.1 626.49L688.01 113.57H688Z"/><path d="M718.34 116.53L706.31 122.48L705.38 634.55L718.34 628.54L718.34 116.53Z"/><path d="M700.04 108L718.44 116.49L706.32 122.32L688 113.57L700.04 108Z"/><path d="M718.44 145.57L700.12 154.56L701.05 654.55L718.34 646.49L718.43 145.57H718.44Z"/><path d="M688.1 148.53L700.13 154.48L701.06 654.55L688.1 648.54L688.1 148.53Z"/><path d="M706.4 140L688 148.49L700.12 154.32L718.44 145.57L706.4 140Z"/><path d="M0 145.57L18.32 154.56L17.39 654.55L0.0999985 646.49L0.00999832 145.57H0Z"/><path d="M30.34 148.53L18.31 154.48L17.38 654.55L30.34 648.54L30.34 148.53Z"/><path d="M12.0401 140L30.4401 148.49L18.3201 154.32L0.000116348 145.57L12.0401 140Z"/></clipPath></defs>
+      <g filter="url(#fx-wood-edge)">
+      <g filter="url(#fx-shadow-layered)">
+      <path d="M368 338H354V719.506L361 724L368 719.506V338Z" fill="#441205"/>
+      </g>
+      <g class="wood-grain"><g clip-path="url(#fr-c23)"><rect x="351" y="335" width="20" height="392" filter="url(#fx-grain-v)"/></g></g>
+      <path d="M18.9953 196.336L19.1082 185.407L400.948 362.432L400.783 373.3L18.9953 196.336Z" fill="#3B1005"/>
+      <g class="wood-grain"><g clip-path="url(#fr-c8)"><g transform="rotate(-65 359.2 372.2)"><rect x="371.8" y="-18" width="16.9" height="431.3" filter="url(#fx-grain-f)"/></g></g></g>
+      <path d="M18.5436 185.155L29.8976 182.054L388.604 348.159L388.977 357.003L18.5436 185.155Z" fill="#86574B"/>
+      <g class="wood-grain"><g clip-path="url(#fr-c9)"><g transform="rotate(-65 359.2 372.2)"><rect x="381.8" y="-18.6" width="14.7" height="414.4" filter="url(#fx-grain-f)"/></g></g></g>
+      <path d="M709 187.5V191.5L329.8 369.5L329.8 357.818L709 182V187.5Z" fill="#3B1005"/>
+      <g class="wood-grain"><g clip-path="url(#fr-c10)"><g transform="rotate(65 359.2 372.2)"><rect x="330.7" y="-28.2" width="16.6" height="428.9" filter="url(#fx-grain-r)"/></g></g></g>
+      <path d="M709 182L694.1 177.5L329.8 347.5L329.8 358.68L709 182Z" fill="#86574B"/>
+      <g class="wood-grain"><g clip-path="url(#fr-c11)"><g transform="rotate(65 359.2 372.2)"><rect x="321.3" y="-28.2" width="16.4" height="424.3" filter="url(#fx-grain-r)"/></g></g></g>
+      <path transform="translate(0 -2.9)" d="M700.748 552.975L706.559 565.449L326.935 742.761L321.114 730.286L700.739 552.975H700.748Z" fill="#441205"/>
+      <g class="wood-grain"><g transform="translate(0 -2.9)" clip-path="url(#fr-c14)"><g transform="rotate(65 359.2 372.2)"><rect x="664.4" y="136.1" width="20" height="425" filter="url(#fx-grain-r)"/></g></g></g>
+      <path transform="translate(0 -0.55)" d="M24.0002 570.475L29.8205 558L402.852 731.95L397.031 744.424L24.0002 570.475Z" fill="#441205"/>
+      <g class="wood-grain"><g transform="translate(0 -0.55)" clip-path="url(#fr-c16)"><g transform="rotate(-65 359.2 372.2)"><rect x="34.8" y="149.2" width="19.8" height="417.6" filter="url(#fx-grain-f)"/></g></g></g>
+      <g><path d="M30.4403 113.57L12.1203 122.56L13.0503 634.55L30.3403 626.49L30.4303 113.57H30.4403Z" fill="#360E04"/>
+      <g><path d="M0.100273 116.53L12.1303 122.48L13.0603 634.55L0.100273 628.54L0.100273 116.53Z" fill="#360E04"/>
+      <path d="M0.100273 116.53L12.1303 122.48L13.0603 634.55L0.100273 628.54L0.100273 116.53Z" fill="url(#fr-paint6_linear_0_13)" fill-opacity="0.6"/>
+      </g>
+      <path d="M18.4002 108L0.000175476 116.49L12.1202 122.32L30.4402 113.57L18.4002 108Z" fill="#97736C"/>
+      </g>
+      <g class="wood-grain"><g clip-path="url(#fr-c19)"><rect x="9.1" y="110.6" width="24.3" height="527" filter="url(#fx-grain-v)"/></g><g clip-path="url(#fr-c20)"><rect x="-2.9" y="113.5" width="19" height="524" filter="url(#fx-grain-v)"/></g></g>
+      <g><g><path d="M688 113.57L706.32 122.56L705.39 634.55L688.1 626.49L688.01 113.57H688Z" fill="#360E04"/>
+      <path d="M688 113.57L706.32 122.56L705.39 634.55L688.1 626.49L688.01 113.57H688Z" fill="url(#fr-paint7_linear_0_13)" fill-opacity="0.4"/>
+      </g>
+      <path d="M718.34 116.53L706.31 122.48L705.38 634.55L718.34 628.54L718.34 116.53Z" fill="#360E04"/>
+      <path d="M700.04 108L718.44 116.49L706.32 122.32L688 113.57L700.04 108Z" fill="#97736C"/>
+      </g>
+      <g class="wood-grain"><g clip-path="url(#fr-c24)"><rect x="685" y="110.6" width="24.3" height="527" filter="url(#fx-grain-v)"/></g><g clip-path="url(#fr-c25)"><rect x="702.4" y="113.5" width="19" height="524" filter="url(#fx-grain-v)"/></g></g>
+      <g><g><path d="M718.44 145.57L700.12 154.56L701.05 654.55L718.34 646.49L718.43 145.57H718.44Z" fill="#491A0B"/>
+      <path d="M718.44 145.57L700.12 154.56L701.05 654.55L718.34 646.49L718.43 145.57H718.44Z" fill="url(#fr-paint8_linear_0_13)" fill-opacity="0.2"/>
+      </g>
+      <path d="M688.1 148.53L700.13 154.48L701.06 654.55L688.1 648.54L688.1 148.53Z" fill="#491A0B"/>
+      <path d="M706.4 140L688 148.49L700.12 154.32L718.44 145.57L706.4 140Z" fill="#97736C"/>
+      </g>
+      <g class="wood-grain"><g clip-path="url(#fr-c27)"><rect x="697.1" y="142.6" width="24.3" height="515" filter="url(#fx-grain-v)"/></g><g clip-path="url(#fr-c28)"><rect x="685.1" y="145.5" width="19" height="512" filter="url(#fx-grain-v)"/></g></g>
+      <g><g><path d="M0 145.57L18.32 154.56L17.39 654.55L0.0999985 646.49L0.00999832 145.57H0Z" fill="#491A0B"/>
+      <path d="M0 145.57L18.32 154.56L17.39 654.55L0.0999985 646.49L0.00999832 145.57H0Z" fill="url(#fr-paint9_linear_0_13)" fill-opacity="0.2"/>
+      </g>
+      <g><path d="M30.34 148.53L18.31 154.48L17.38 654.55L30.34 648.54L30.34 148.53Z" fill="#491A0B"/>
+      <path d="M30.34 148.53L18.31 154.48L17.38 654.55L30.34 648.54L30.34 148.53Z" fill="url(#fr-paint10_linear_0_13)" fill-opacity="0.2"/>
+      </g>
+      <path d="M12.0401 140L30.4401 148.49L18.3201 154.32L0.000116348 145.57L12.0401 140Z" fill="#97736C"/>
+      </g>
+      <g class="wood-grain"><g clip-path="url(#fr-c30)"><rect x="-3" y="142.6" width="24.3" height="515" filter="url(#fx-grain-v)"/></g><g clip-path="url(#fr-c31)"><rect x="14.4" y="145.5" width="19" height="512" filter="url(#fx-grain-v)"/></g></g></g>
+      <rect class="wood-tone" clip-path="url(#ff-call)" x="0" y="0" width="718.44" height="744.424" filter="url(#fx-tone)"/>
+      </g>
+        </svg>
+        <i class="fx wood-tint" aria-hidden="true"></i>
+        <i class="fx wood-sheen" aria-hidden="true"><i class="sheen-spot"></i></i>
+        <i class="fx wood-glow" aria-hidden="true"></i>
+      </div>
+      <div class="post post-a">
+        <svg class="post-svg" viewBox="0 0 30.4401 514.55" preserveAspectRatio="none" overflow="visible" aria-hidden="true">
+        <defs><clipPath id="pa-c0"><path d="M30.4401 5.56982L12.1201 14.5598L13.0501 514.55L30.3401 506.49L30.4301 5.56982H30.4401Z"/></clipPath><clipPath id="pa-c1"><path d="M0.100098 8.52979L12.1301 14.4798L13.0601 514.55L0.100098 508.54L0.100098 8.52979Z"/></clipPath><clipPath id="pa-c2"><path d="M18.4 0L0 8.49L12.12 14.32L30.44 5.57L18.4 0Z"/></clipPath><clipPath id="pa-call"><path d="M30.4401 5.56982L12.1201 14.5598L13.0501 514.55L30.3401 506.49L30.4301 5.56982H30.4401Z"/><path d="M0.100098 8.52979L12.1301 14.4798L13.0601 514.55L0.100098 508.54L0.100098 8.52979Z"/><path d="M18.4 0L0 8.49L12.12 14.32L30.44 5.57L18.4 0Z"/></clipPath>
+        <linearGradient id="pa-paint0_linear_0_71" x1="46.9395" y1="177.5" x2="-1.56054" y2="268.5" gradientUnits="userSpaceOnUse">
+        <stop stop-color="#2D0000"/>
+        <stop offset="1" stop-color="#E59D9D" stop-opacity="0.2"/>
+        </linearGradient>
+        </defs>
+        <g filter="url(#fx-wood-edge)">
+        <g><g><path d="M30.4401 5.56982L12.1201 14.5598L13.0501 514.55L30.3401 506.49L30.4301 5.56982H30.4401Z" fill="#491A0B"/>
+        <path d="M30.4401 5.56982L12.1201 14.5598L13.0501 514.55L30.3401 506.49L30.4301 5.56982H30.4401Z" fill="url(#pa-paint0_linear_0_71)" fill-opacity="0.2"/>
+        </g>
+        <path d="M0.100098 8.52979L12.1301 14.4798L13.0601 514.55L0.100098 508.54L0.100098 8.52979Z" fill="#491A0B"/>
+        <path d="M18.4 0L0 8.49L12.12 14.32L30.44 5.57L18.4 0Z" fill="#97736C"/>
+        </g>
+        <g class="wood-grain"><g clip-path="url(#pa-c0)"><rect x="9.1" y="2.6" width="24.3" height="515" filter="url(#fx-grain-pa)"/></g><g clip-path="url(#pa-c1)"><rect x="-2.9" y="5.5" width="19" height="512" filter="url(#fx-grain-pa)"/></g></g><rect class="wood-tone" clip-path="url(#pa-call)" x="0" y="0" width="30.4401" height="514.55" filter="url(#fx-tone-pa)"/>
+        </g>
+        </svg>
+        <i class="fx wood-tint" aria-hidden="true"></i>
+        <i class="fx wood-sheen" aria-hidden="true"><i class="sheen-spot"></i></i>
+        <i class="fx wood-glow" aria-hidden="true"></i>
+      </div>
+      <div class="post post-b">
+        <svg class="post-svg" viewBox="0 0 30.4401 514.55" preserveAspectRatio="none" overflow="visible" aria-hidden="true">
+        <defs><clipPath id="pb-c0"><path d="M30.4401 5.56982L12.1201 14.5598L13.0501 514.55L30.3401 506.49L30.4301 5.56982H30.4401Z"/></clipPath><clipPath id="pb-c1"><path d="M0.100098 8.52979L12.1301 14.4798L13.0601 514.55L0.100098 508.54L0.100098 8.52979Z"/></clipPath><clipPath id="pb-c2"><path d="M18.4 0L0 8.49L12.12 14.32L30.44 5.57L18.4 0Z"/></clipPath><clipPath id="pb-call"><path d="M30.4401 5.56982L12.1201 14.5598L13.0501 514.55L30.3401 506.49L30.4301 5.56982H30.4401Z"/><path d="M0.100098 8.52979L12.1301 14.4798L13.0601 514.55L0.100098 508.54L0.100098 8.52979Z"/><path d="M18.4 0L0 8.49L12.12 14.32L30.44 5.57L18.4 0Z"/></clipPath>
+        <linearGradient id="pb-paint0_linear_0_57" x1="46.9395" y1="177.5" x2="-1.56054" y2="268.5" gradientUnits="userSpaceOnUse">
+        <stop stop-color="#2D0000"/>
+        <stop offset="1" stop-color="#666666" stop-opacity="0.2"/>
+        </linearGradient>
+        </defs>
+        <g filter="url(#fx-wood-edge)">
+        <g><g><path d="M30.4401 5.56982L12.1201 14.5598L13.0501 514.55L30.3401 506.49L30.4301 5.56982H30.4401Z" fill="#491A0B"/>
+        <path d="M30.4401 5.56982L12.1201 14.5598L13.0501 514.55L30.3401 506.49L30.4301 5.56982H30.4401Z" fill="url(#pb-paint0_linear_0_57)" fill-opacity="0.2"/>
+        </g>
+        <path d="M0.100098 8.52979L12.1301 14.4798L13.0601 514.55L0.100098 508.54L0.100098 8.52979Z" fill="#491A0B"/>
+        <path d="M18.4 0L0 8.49L12.12 14.32L30.44 5.57L18.4 0Z" fill="#97736C"/>
+        </g>
+        <g class="wood-grain"><g clip-path="url(#pb-c0)"><rect x="9.1" y="2.6" width="24.3" height="515" filter="url(#fx-grain-pb)"/></g><g clip-path="url(#pb-c1)"><rect x="-2.9" y="5.5" width="19" height="512" filter="url(#fx-grain-pb)"/></g></g><rect class="wood-tone" clip-path="url(#pb-call)" x="0" y="0" width="30.4401" height="514.55" filter="url(#fx-tone-pb)"/>
+        </g>
+        </svg>
+        <i class="fx wood-tint" aria-hidden="true"></i>
+        <i class="fx wood-sheen" aria-hidden="true"><i class="sheen-spot"></i></i>
+        <i class="fx wood-glow" aria-hidden="true"></i>
+      </div>
     </div>
 
     <div class="designer" id="designer">
@@ -587,8 +1287,29 @@ So this project is inspired by that.</p>
   let resizeTimer;
   window.addEventListener('resize', () => {
     clearTimeout(resizeTimer);
-    resizeTimer = setTimeout(recomputeAllWarps, 100);
+    resizeTimer = setTimeout(() => {
+      recomputeAllWarps();
+      buildLampFx(); // px-based softness depends on the lamp's rendered size
+    }, 100);
   });
+
+  // Satin sheen follows the cursor. Only two custom properties change, set
+  // on the sheen spots themselves (not .lamp) so the style update stays
+  // off the big inline SVGs; they only drive transforms -- no repaint.
+  const sheenSpots = document.querySelectorAll('.sheen-spot');
+  let sheenFrame = 0, sheenX = 0, sheenY = 0;
+  window.addEventListener('pointermove', (e) => {
+    sheenX = (e.clientX / innerWidth) * 2 - 1;
+    sheenY = (e.clientY / innerHeight) * 2 - 1;
+    if (sheenFrame) return;
+    sheenFrame = requestAnimationFrame(() => {
+      sheenFrame = 0;
+      for (const spot of sheenSpots) {
+        spot.style.setProperty('--px', sheenX.toFixed(3));
+        spot.style.setProperty('--py', sheenY.toFixed(3));
+      }
+    });
+  }, { passive: true });
 
   // Apply artwork drawn on the "Design your own lamp shade" screen, if any.
   // This is single-use: clear it right after applying so a plain page
